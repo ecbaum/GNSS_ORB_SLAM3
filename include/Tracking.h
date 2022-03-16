@@ -223,6 +223,8 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    std::vector<double> testVec;
+
     // Perform preintegration from last frame
     void PreintegrateIMU();
 

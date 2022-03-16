@@ -16,9 +16,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 */
 
-
 #include "Tracking.h"
-
 #include "ORBmatcher.h"
 #include "FrameDrawer.h"
 #include "Converter.h"
@@ -1682,6 +1680,9 @@ void Tracking::PreintegrateIMU()
 
     IMU::Preintegrated* pImuPreintegratedFromLastFrame = new IMU::Preintegrated(mLastFrame.mImuBias,mCurrentFrame.mImuCalib);
 
+
+
+
     for(int i=0; i<n; i++)
     {
         float tstep;
@@ -1723,6 +1724,8 @@ void Tracking::PreintegrateIMU()
             cout << "mpImuPreintegratedFromLastKF does not exist" << endl;
         mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
         pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
+
+    testVec.push_back(tstep);
     }
 
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
@@ -2356,7 +2359,7 @@ void Tracking::StereoInitialization()
             mpImuPreintegratedFromLastKF = new IMU::Preintegrated(IMU::Bias(),*mpImuCalib);
             mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
         }
-
+        // 
         // Set Frame pose to the origin (In case of inertial SLAM to imu)
         if (mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
         {
@@ -2423,7 +2426,6 @@ void Tracking::StereoInitialization()
         //cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
 
         mpLocalMapper->InsertKeyFrame(pKFini);
-
         mLastFrame = Frame(mCurrentFrame);
         mnLastKeyFrameId = mCurrentFrame.mnId;
         mpLastKeyFrame = pKFini;
@@ -3237,8 +3239,18 @@ void Tracking::CreateNewKeyFrame()
     }
     else
         Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
-
+    
     // Reset preintegration from last KF (Create new object)
+            cout << "tstep:"<< endl;
+
+    for (int i = 0; i< testVec.size();i++){
+
+        cout << testVec[i];
+    }
+
+    cout << endl;
+    testVec.clear();
+
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
         mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(),pKF->mImuCalib);
