@@ -103,7 +103,16 @@ void Atlas::SetViewer(Viewer* pViewer)
 void Atlas::AddKeyFrame(KeyFrame* pKF)
 {
     Map* pMapKF = pKF->GetMap();
+   
     pMapKF->AddKeyFrame(pKF);
+    /*
+      //Martin GNSS
+    cout << "Success";
+    for(int j = 0; j < pKF->accBetweenKFs.size(); j ++){
+    cout << pKF->accBetweenKFs[j];
+    }
+    cout << endl;*/
+    
 }
 
 void Atlas::AddMapPoint(MapPoint* pMP)

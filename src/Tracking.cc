@@ -1725,7 +1725,10 @@ void Tracking::PreintegrateIMU()
         mpImuPreintegratedFromLastKF->IntegrateNewMeasurement(acc,angVel,tstep);
         pImuPreintegratedFromLastFrame->IntegrateNewMeasurement(acc,angVel,tstep);
 
-    testVec.push_back(tstep);
+        accBetweenKFs.push_back(acc); //GNSS Martin
+        angVelBetweenKFs.push_back(angVel); //GNSS Martin
+        tstepBetweenKFs.push_back(tstep); //GNSS Martin
+   
     }
 
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
@@ -3241,15 +3244,21 @@ void Tracking::CreateNewKeyFrame()
         Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
     
     // Reset preintegration from last KF (Create new object)
-            cout << "tstep:"<< endl;
+           // cout << "tstep:"<< endl;
+    
+        pKF->accBetweenKFs = accBetweenKFs; //GNSS Martin
+        pKF->angVelBetweenKFs = angVelBetweenKFs; //GNSS Martin
+        pKF->tstepBetweenKFs = tstepBetweenKFs; //GNSS Martin
+        accBetweenKFs.clear();
+        angVelBetweenKFs.clear();
+        tstepBetweenKFs.clear();
+    //for (int i = 0; i< testVec.size();i++){
 
-    for (int i = 0; i< testVec.size();i++){
+        //cout << testVec[i];
+    //}
 
-        cout << testVec[i];
-    }
-
-    cout << endl;
-    testVec.clear();
+   // cout << endl;
+    
 
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
