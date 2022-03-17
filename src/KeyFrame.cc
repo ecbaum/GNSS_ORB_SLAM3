@@ -88,11 +88,18 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
         mVw = F.GetVelocity();
         mbHasVelocity = true;
     }
-
+    
     mImuBias = F.mImuBias;
     SetPose(F.GetPose());
-
     mnOriginMapId = pMap->GetId();
+
+    //Erik
+    insertGNSS = false;
+    GNSSiter = 0;
+    mpImuPreintegratedToGNSS;
+    mpImuPreintegratedFromGNSS;
+    timeStampGNSS;
+    //E
 }
 
 void KeyFrame::ComputeBoW()
@@ -1155,5 +1162,46 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 {
     mpKeyFrameDB = pKFDB;
 }
+
+//Erik
+void KeyFrame::UpdateGNSSFrameIter() 
+{   
+    GNSSiter += 1;
+    if(GNSSiter%5 == 0){
+        insertGNSS = true;
+    }else{
+        insertGNSS = true;
+    }  
+}
+
+void KeyFrame::IntegrateBetweenGNSS(){
+    mpImuPreintegratedToGNSS = new IMU::Preintegrated(mPrevKF.mImuBias,mPrevKF.mImuCalib);
+    
+    //double tIter = tStart;
+    double _tempFraction = 0.6; //Before GNSS time is implmented and loaded, we use _tempFraction as to "simualte" what fraction of delta time from last to current keyframe its located
+
+    bool _nextPreIntInit = false;
+    std::cout << "from previous keyframe to GNSS node" << std::endl;
+    for(int i = 0; i < accBetweenKFs.size(); i++){
+        acc = accBetweenKFs[i];
+        angVel = angVelBetweenKFs[i];
+        tstep = tstepBetweenKFs[i];
+        
+        /*tIter += tstep;
+        if tIter < timeStampGNSS{*/
+        
+        if(i < accBetweenKFs.size()*_tempFraction){
+            mpImuPreintegratedToGNSS->IntegrateNewMeasurement(acc,angVel,tstep);
+        }else if(!_nextPreIntInit){
+            mpImuPreintegratedFromGNSS = new IMU::Preintegrated(mpImuPreintegratedToGNSS);
+            _nextPreIntInit = true;
+            std::cout << "from GNSS node to current keyframe" << std::endl;
+        }else{
+            mpImuPreintegratedFromGNSS->IntegrateNewMeasurement(acc,angVel,tstep);
+        }
+    }
+    
+}
+//E
 
 } //namespace ORB_SLAM
