@@ -1172,7 +1172,7 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 
 
 
-}
+
  //namespace ORB_SLAM
 
 //Erik
@@ -1187,7 +1187,7 @@ void KeyFrame::UpdateGNSSFrameIter()
 }
 
 void KeyFrame::IntegrateBetweenGNSS(){
-    mpImuPreintegratedToGNSS = new IMU::Preintegrated(mPrevKF.mImuBias,mPrevKF.mImuCalib);
+    mpImuPreintegratedToGNSS = new IMU::Preintegrated(mPrevKF->mImuBias,mPrevKF->mImuCalib);
     
     //double tIter = tStart;
     double _tempFraction = 0.6; //Before GNSS time is implmented and loaded, we use _tempFraction as to "simualte" what fraction of delta time from last to current keyframe its located
@@ -1195,9 +1195,9 @@ void KeyFrame::IntegrateBetweenGNSS(){
     bool _nextPreIntInit = false;
     std::cout << "from previous keyframe to GNSS node" << std::endl;
     for(int i = 0; i < accBetweenKFs.size(); i++){
-        acc = accBetweenKFs[i];
-        angVel = angVelBetweenKFs[i];
-        tstep = tstepBetweenKFs[i];
+        Eigen::Matrix<float, 3, 1> acc = accBetweenKFs[i];
+        Eigen::Matrix<float, 3, 1> angVel = angVelBetweenKFs[i];
+        double tstep = tstepBetweenKFs[i];
         
         /*tIter += tstep;
         if tIter < timeStampGNSS{*/
@@ -1212,8 +1212,9 @@ void KeyFrame::IntegrateBetweenGNSS(){
             mpImuPreintegratedFromGNSS->IntegrateNewMeasurement(acc,angVel,tstep);
         }
     }
-    
 }
+
+
 //E
 
 } //namespace ORB_SLAM

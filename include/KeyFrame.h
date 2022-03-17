@@ -304,7 +304,7 @@ public:
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
     void UpdateGNSSFrameIter();
-
+    void IntegrateBetweenGNSS();
     bool bImu;
 
     //void SetTestVec(std::vector<float> tVec); // GNSS Martin
