@@ -38,7 +38,7 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
 
-
+#include <vector>
 namespace ORB_SLAM3
 {
 
@@ -307,6 +307,8 @@ public:
 
     bool bImu;
 
+    //void SetTestVec(std::vector<float> tVec); // GNSS Martin
+
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
 
@@ -422,6 +424,13 @@ public:
 
     std::vector <KeyFrame*> mvpLoopCandKFs;
     std::vector <KeyFrame*> mvpMergeCandKFs;
+
+
+
+    vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
+    vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
+    vector<double> tstepBetweenKFs; //GNSS Martin
+   
 
     
     //Erik

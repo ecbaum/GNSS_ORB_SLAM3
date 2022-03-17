@@ -21,6 +21,7 @@
 #include "ImuTypes.h"
 #include<mutex>
 
+
 namespace ORB_SLAM3
 {
 
@@ -93,6 +94,11 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     SetPose(F.GetPose());
     mnOriginMapId = pMap->GetId();
 
+    accBetweenKFs; //GNSS Martin
+    angVelBetweenKFs; //GNSS Martin
+    tstepBetweenKFs; //GNSS Martin}
+
+
     //Erik
     insertGNSS = false;
     GNSSiter = 0;
@@ -100,8 +106,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mpImuPreintegratedFromGNSS;
     timeStampGNSS;
     //E
-}
 
+}
 void KeyFrame::ComputeBoW()
 {
     if(mBowVec.empty() || mFeatVec.empty())
@@ -833,6 +839,7 @@ Eigen::Vector3f KeyFrame::GetAccBias()
     return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
 
+
 IMU::Bias KeyFrame::GetImuBias()
 {
     unique_lock<mutex> lock(mMutexPose);
@@ -1163,6 +1170,11 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
     mpKeyFrameDB = pKFDB;
 }
 
+
+
+}
+ //namespace ORB_SLAM
+
 //Erik
 void KeyFrame::UpdateGNSSFrameIter() 
 {   
@@ -1205,3 +1217,4 @@ void KeyFrame::IntegrateBetweenGNSS(){
 //E
 
 } //namespace ORB_SLAM
+

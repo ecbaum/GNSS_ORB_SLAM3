@@ -223,6 +223,10 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
+    vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
+    vector<double>tstepBetweenKFs; //GNSS Martin
+   
     // Perform preintegration from last frame
     void PreintegrateIMU();
 
