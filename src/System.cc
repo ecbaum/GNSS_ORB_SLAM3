@@ -68,8 +68,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
     //Check settings file
     cv::FileStorage fsSettings(strSettingsFile.c_str(), cv::FileStorage::READ);
-    if(!fsSettings.isOpened())
+       if(!fsSettings.isOpened())
     {
+        
        cerr << "Failed to open settings file at: " << strSettingsFile << endl;
        exit(-1);
     }
@@ -99,6 +100,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     }
 
     node = fsSettings["loopClosing"];
+   
+    //Testar att avaktivera loopClosing //Martin GNSS
     bool activeLC = true;
     if(!node.empty())
     {
@@ -443,18 +446,19 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
     }
 
     // Check reset
+    //Removed the map-reset //Martin GNSS
     {
         unique_lock<mutex> lock(mMutexReset);
         if(mbReset)
         {
-            mpTracker->Reset();
+            //mpTracker->Reset();
             mbReset = false;
             mbResetActiveMap = false;
         }
         else if(mbResetActiveMap)
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
+            //mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -502,6 +506,7 @@ bool System::MapChanged()
 
 void System::Reset()
 {
+    cout << "Trying to reset... "<< endl;
     unique_lock<mutex> lock(mMutexReset);
     mbReset = true;
 }
