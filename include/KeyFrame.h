@@ -306,7 +306,7 @@ public:
     void UpdateGNSSFrameIter();
     void IntegrateBetweenGNSS();
     bool bImu;
-
+    bool isGNSSframe;
     //void SetTestVec(std::vector<float> tVec); // GNSS Martin
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
