@@ -17,6 +17,7 @@
 */
 
 #include "KeyFrame.h"
+#include "GNSSFrame.h"
 #include "Converter.h"
 #include "ImuTypes.h"
 #include<mutex>
@@ -105,6 +106,8 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mpImuPreintegratedToGNSS;
     mpImuPreintegratedFromGNSS;
     timeStampGNSS;
+    GF;
+
     //E
 
 }
@@ -1182,7 +1185,7 @@ void KeyFrame::UpdateGNSSFrameIter()
     if(GNSSiter%5 == 0){
         insertGNSS = true;
     }else{
-        insertGNSS = true;
+        insertGNSS = false;
     }  
 }
 

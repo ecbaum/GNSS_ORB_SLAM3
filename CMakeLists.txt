@@ -63,7 +63,7 @@ src/ORBmatcher.cc
 src/FrameDrawer.cc
 src/Converter.cc
 src/MapPoint.cc
-src/KeyFrame.
+src/KeyFrame.cc
 src/GNSSFrame.cc
 src/Atlas.cc
 src/Map.cc

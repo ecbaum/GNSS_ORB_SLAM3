@@ -28,12 +28,15 @@ namespace ORB_SLAM3
 
 Atlas::Atlas(){
     mpCurrentMap = static_cast<Map*>(NULL);
+        GNSSiter= 0; 
+
 }
 
 Atlas::Atlas(int initKFid): mnLastInitKFidMap(initKFid), mHasViewer(false)
 {
     mpCurrentMap = static_cast<Map*>(NULL);
     CreateNewMap();
+        GNSSiter = 0; 
 }
 
 Atlas::~Atlas()
@@ -102,9 +105,16 @@ void Atlas::SetViewer(Viewer* pViewer)
 
 void Atlas::AddKeyFrame(KeyFrame* pKF)
 {
+        GNSSiter++; 
+
     Map* pMapKF = pKF->GetMap();
-   
+    if (GNSSiter%5 ==0){
+        cout << "Success insert GNSS" << endl; 
+        
+    }
+
     pMapKF->AddKeyFrame(pKF);
+
     /*
       //Martin GNSS
     cout << "Success";

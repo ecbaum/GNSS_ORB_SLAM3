@@ -28,6 +28,7 @@
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
+#include "GNSSFrame.h"
 
 #include "GeometricCamera.h"
 #include "SerializationUtils.h"
@@ -46,7 +47,7 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
-
+class GNSSFrame;
 class GeometricCamera;
 
 class KeyFrame
@@ -311,7 +312,6 @@ public:
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
-
     static long unsigned int nNextId;
     long unsigned int mnId;
     const long unsigned int mnFrameId;
@@ -523,7 +523,7 @@ protected:
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;
-
+    GNSSFrame* GF;
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
 

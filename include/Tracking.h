@@ -116,7 +116,6 @@ public:
 #endif
 
 public:
-
     // Tracking states
     enum eTrackingState{
         SYSTEM_NOT_READY=-1,

@@ -95,7 +95,6 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;
     mnNumDataset = 0;
-
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
     std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
     for(GeometricCamera* pCam : vpCams)
@@ -1799,7 +1798,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-
     if (bStepByStep)
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
@@ -2202,6 +2200,8 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
+
+
 
         // Update drawer
         mpFrameDrawer->Update(this);

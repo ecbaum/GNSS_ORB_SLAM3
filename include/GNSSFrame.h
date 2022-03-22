@@ -1,8 +1,8 @@
 
 
 
-#ifndef KEYFRAME_H
-#define KEYFRAME_H
+#ifndef GNSSFRAME_H
+#define GNSSFRAME_H
 
 #include "Frame.h"
 #include "ImuTypes.h"
@@ -19,32 +19,34 @@
 namespace ORB_SLAM3
 {
 
-class Map;
-class MapPoint;
-class Frame;
-class KeyFrameDatabase;
-
-class GeometricCamera;
-
 class KeyFrame;
+
+
 
 class GNSSFrame
 {
 
+   
 
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    GNSSFrame();
+    KeyFrame* parentKeyFrame;
+   /*
+    IMU::Preintegrated* mpImuPreintegrated;
+    IMU::Calib mImuCalib;
+    IMU::Bias mImuBias;
 
-    GNSSFrame(KeyFrame &F);
 
-    // Pose functions
+
+    std::mutex mMutexPose; // for pose, velocity and biases
+
+
+      // Pose functions
     void SetPose(const Sophus::SE3f &Tcw);
     void SetVelocity(const Eigen::Vector3f &Vw_);
 
     Sophus::SE3f GetPose();
-
     Sophus::SE3f GetPoseInverse();
-
     Eigen::Vector3f GetImuPosition();
     Eigen::Matrix3f GetImuRotation();
     Sophus::SE3f GetImuPose();
@@ -54,39 +56,8 @@ public:
     bool isVelocitySet();
 
 
-    void SetNewBias(const IMU::Bias &b);
-    Eigen::Vector3f GetGyroBias();
 
-    Eigen::Vector3f GetAccBias();
-
-    IMU::Bias GetImuBias();
-
-    bool bImu;
-
-public:
-
-    const double mTimeStamp;
-
-    // Variables used by the local mapping
-    long unsigned int mnBALocalForKF;
-    long unsigned int mnBAFixedForKF;
-
-    //Number of optimizations by BA(amount of iterations in BA)
-    long unsigned int mnNumberOfOpt;
-
-    // Pose relative to parent (this is computed when bad flag is activated)
-    Sophus::SE3f mTcp;
-    // Preintegrated IMU measurements from previous keyframe
-    KeyFrame* mPrevKF;
-    KeyFrame* mNextKF;
-
-    IMU::Preintegrated* mpImuPreintegrated;
-    IMU::Calib mImuCalib;
-
-    unsigned int mnOriginMapId;
-
-protected:
-    // sophus poses
+        // sophus poses
     Sophus::SE3<float> mTcw;
     Eigen::Matrix3f mRcw;
     Sophus::SE3<float> mTwc;
@@ -97,26 +68,16 @@ protected:
     // Velocity (Only used for inertial SLAM)
     Eigen::Vector3f mVw;
     bool mbHasVelocity;
+;
 
     // Imu bias
-    IMU::Bias mImuBias;   
-
-    // Backup variables for inertial
-    long long int mBackupPrevKFId;
-    long long int mBackupNextKFId;
-    IMU::Preintegrated mBackupImuPreintegrated;
-
-
-    // Calibration
-    Eigen::Matrix3f mK_;
-
-    // Mutex
-    std::mutex mMutexPose; // for pose, velocity and biases
-    std::mutex mMutexConnections;
-    std::mutex mMutexFeatures;
-    std::mutex mMutexMap;
+    IMU::Bias mImuBias;
+*/
+    int a;
+protected:
+  
 };
 
 } //namespace ORB_SLAM
 
-#endif // KEYFRAME_H
+#endif // GNSSFRAME_H
