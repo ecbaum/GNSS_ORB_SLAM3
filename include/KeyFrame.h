@@ -304,10 +304,6 @@ public:
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
     void IntegrateToGNSS();
-    bool bImu;
-    bool isGNSSframe;
-    //void SetTestVec(std::vector<float> tVec); // GNSS Martin
-
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
 
@@ -433,10 +429,12 @@ public:
 
     
     //Erik
-    bool fGF; // Flag GNSS frame or not
+
     IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
     double GNSS_deltaT;
+    bool bImu;
+    bool fGF;
     //E
 
     //bool mbHasHessian;

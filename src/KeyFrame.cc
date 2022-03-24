@@ -60,7 +60,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F.mNameFile), mnMergeCorrectedForKF(0),
     mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
-    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false), isGNSSframe(F.isGNSSframe)
+    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false), fGF(F.fGF)
 {
     mnId=nNextId++;
 
@@ -582,7 +582,7 @@ void KeyFrame::SetErase()
 
 void KeyFrame::SetBadFlag()
 {
-    if(isGNSSframe){
+    if(fGF){
         mbBad = false;
         cout << "Tried to remove GNSS frame, denied" << endl;
         return;
@@ -1178,7 +1178,6 @@ void setGNSS(){
     fGF = true;
     timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
     GNSS_deltaT = mTimeStamp - timeStampGNSS;
-
 }
 
 
@@ -1190,7 +1189,7 @@ void KeyFrame::IntegrateBetweenGNSS(){
 
     mpImuPreintegratedToGNSS = new IMU::Preintegrated(mImuBias,mImuCalib);
 
-    std::cout << "from previous keyframe to GNSS node" << std::endl;
+    std::cout << "Integration from current keyframe to GNSS node" << std::endl;
 
     double deltat_sum = 0;
     float t_step_diff = 0;
