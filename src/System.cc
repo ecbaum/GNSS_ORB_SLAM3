@@ -32,9 +32,15 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
 
 namespace ORB_SLAM3
 {
+vector<vector<double>> readGNSS(const string &filename, vector<vector<double>> GNSSrow );
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
@@ -184,12 +190,20 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
+    
+
+    
+
+    string pathGNSS = "../data/MH_01_easy/mav0/GNSS.csv";
+    GNSSrow; 
+
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
+    mpTracker->GNSS_data = readGNSS(pathGNSS,GNSSrow); //Loading GNSSdata to tracker. 
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
@@ -297,13 +311,13 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         unique_lock<mutex> lock(mMutexReset);
         if(mbReset)
         {
-            mpTracker->Reset();
+            //mpTracker->Reset();
             mbReset = false;
             mbResetActiveMap = false;
         }
         else if(mbResetActiveMap)
         {
-            mpTracker->ResetActiveMap();
+            //mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -1544,6 +1558,38 @@ string System::CalculateCheckSum(string filename, int type)
 
     return checksum;
 }
+
+
+//Martin GNSS
+
+vector<vector<double>> readGNSS(const string &filename, vector<vector<double>> GNSSrow )
+{
+    std::ifstream f;
+    std::cout << "reading csv file \n";
+
+    f.open (filename.c_str());   /* open file with filename as argument */
+    if (! f.is_open()) {    /* validate file open for reading */
+        std::cerr << "error: file open failed.\n";
+    }
+
+    std::string line, val;                  /* string for line & value */
+    std::vector<std::vector<double>> array;    /* vector of vector<int>  */
+
+    while (std::getline (f, line)) {        /* read each line */
+        std::vector<double> v;                 /* row vector v */
+        std::stringstream s (line);         /* stringstream line */
+        while (getline (s, val, ','))       /* get each value (',' delimited) */
+            v.push_back (std::stod (val));  /* add to row vector */
+        array.push_back (v);                /* add row vector to array */
+    }
+       return array; 
+}
+
+
+
+
+
+
 
 } //namespace ORB_SLAM
 

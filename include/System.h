@@ -177,6 +177,10 @@ public:
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
+    string pathGNSS; //Martin GNSS
+    vector<vector <double>> GNSSrow; //Martin GNSS
+   // void readGNSS(const string &filename);
+
     // For debugging
     double GetTimeFromIMUInit();
     bool isLost();
@@ -260,7 +264,6 @@ private:
     string mStrSaveAtlasToFile;
 
     string mStrVocabularyFilePath;
-
     Settings* settings_;
 };
 

@@ -110,11 +110,9 @@ void Atlas::AddKeyFrame(KeyFrame* pKF)
     Map* pMapKF = pKF->GetMap();
     if (GNSSiter%5 ==0){
         cout << "Success insert GNSS" << endl; 
-        
     }
 
     pMapKF->AddKeyFrame(pKF);
-
     /*
       //Martin GNSS
     cout << "Success";

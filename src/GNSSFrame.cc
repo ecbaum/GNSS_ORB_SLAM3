@@ -10,7 +10,7 @@ namespace ORB_SLAM3
 {
    GNSSFrame::GNSSFrame()
    {
-
+      
    }
 
  
