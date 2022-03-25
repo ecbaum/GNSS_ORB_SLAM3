@@ -60,7 +60,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mbToBeErased(false), mbBad(false), mHalfBaseline(F.mb/2), mpMap(pMap), mbCurrentPlaceRecognition(false), mNameFile(F.mNameFile), mnMergeCorrectedForKF(0),
     mpCamera(F.mpCamera), mpCamera2(F.mpCamera2),
     mvLeftToRightMatch(F.mvLeftToRightMatch),mvRightToLeftMatch(F.mvRightToLeftMatch), mTlr(F.GetRelativePoseTlr()),
-    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false), fGF(F.fGF)
+    mvKeysRight(F.mvKeysRight), NLeft(F.Nleft), NRight(F.Nright), mTrl(F.GetRelativePoseTrl()), mnNumberOfOpt(0), mbHasVelocity(false)
 {
     mnId=nNextId++;
 
@@ -99,7 +99,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     tstepBetweenKFs; //GNSS Martin}
 
     fGF = false;
-    mpImuPreintegratedFromGNSS;
+    mpImuPreintegratedToGNSS;
     timeStampGNSS;
     GNSS_deltaT;
     //E
@@ -1174,7 +1174,7 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 }
 
 
-void setGNSS(){
+void KeyFrame::setGNSS(){
     fGF = true;
     timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
     GNSS_deltaT = mTimeStamp - timeStampGNSS;
@@ -1185,7 +1185,7 @@ void setGNSS(){
 
 //Erik
 
-void KeyFrame::IntegrateBetweenGNSS(){
+void KeyFrame::IntegrateToGNSS(){
 
     mpImuPreintegratedToGNSS = new IMU::Preintegrated(mImuBias,mImuCalib);
 

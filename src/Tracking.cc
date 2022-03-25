@@ -2206,7 +2206,7 @@ void Tracking::Track()
         frame_counter_for_GNSS++;
         if(frame_counter_for_GNSS%10 == 0){
             cout << "insert GNSS frame" << endl;
-            mCurrentFrame.setGNSS();
+            mCurrentFrame.convertToGNSS = true;
         }
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -2256,7 +2256,7 @@ void Tracking::Track()
 
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
-            if(mCurrentFrame.fGF){
+            if(mCurrentFrame.convertToGNSS){
                 CreateNewKeyFrame();
             }else
             {
@@ -3242,7 +3242,9 @@ void Tracking::CreateNewKeyFrame()
         return;
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
-    if(mCurrentFrame.fGF){
+
+    if(mCurrentFrame.convertToGNSS){
+        pKF->setGNSS();
         cout << "GNSS keyframe inserted" << endl;
     }
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())

@@ -163,7 +163,7 @@ public:
     }
 
     //Erik
-    bool isGNSSframe;
+    bool convertToGNSS;
 
 private:
     //Sophus/Eigen migration
