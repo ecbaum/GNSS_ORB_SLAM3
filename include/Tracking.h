@@ -172,6 +172,9 @@ public:
     //GNSS data load.
      vector<vector<double>> GNSS_data;
 
+    //Erik
+    int frame_counter_for_GNSS;
+
     vector<MapPoint*> GetLocalMapMPS();
 
     bool mbWriteStats;

@@ -138,10 +138,10 @@ void LocalMapping::Run()
                             if((mTinit<10.f) && (dist<0.02))
                             {
                                 cout << "Not enough motion for initializing. Reseting..." << endl;
-                                unique_lock<mutex> lock(mMutexReset);
-                                mbResetRequestedActiveMap = true;
-                                mpMapToReset = mpCurrentKeyFrame->GetMap();
-                                mbBadImu = true;
+                              //  unique_lock<mutex> lock(mMutexReset);
+                               // mbResetRequestedActiveMap = true;
+                                //mpMapToReset = mpCurrentKeyFrame->GetMap();
+                                //mbBadImu = true;
                             }
                         }
 
@@ -1079,8 +1079,9 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)
     {
         unique_lock<mutex> lock(mMutexReset);
         cout << "LM: Active map reset recieved" << endl;
-        mbResetRequestedActiveMap = true;
-        mpMapToReset = pMap;
+        //GNSS Martin kommenterade ur raderna nedan
+       // mbResetRequestedActiveMap = true;
+        //mpMapToReset = pMap;
     }
     cout << "LM: Active map reset, waiting..." << endl;
 

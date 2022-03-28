@@ -304,12 +304,10 @@ public:
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
-    void UpdateGNSSFrameIter();
-    void IntegrateBetweenGNSS();
-    bool bImu;
-
-    //void SetTestVec(std::vector<float> tVec); // GNSS Martin
-
+    //Erik
+    void IntegrateToGNSS();
+    void setGNSS();
+    //E
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
     static long unsigned int nNextId;
@@ -434,11 +432,12 @@ public:
 
     
     //Erik
-    bool insertGNSS; //flag to insert GNSS frame (GF)
-    int GNSSiter;
-    IMU::Preintegrated* mpImuPreintegratedToGNSS; // prev KF -> GF
-    IMU::Preintegrated* mpImuPreintegratedFromGNSS; // If GF introduced, mpImuPreintegrated will be redefined as GF -> current KF
+
+    IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
+    double GNSS_deltaT;
+    bool bImu;
+    bool fGF;
     //E
 
     //bool mbHasHessian;
