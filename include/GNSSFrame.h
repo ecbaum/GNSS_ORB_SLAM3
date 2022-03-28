@@ -31,10 +31,8 @@ class GNSSFrame
 public:
     GNSSFrame();
     KeyFrame* parentKeyFrame;
-    double acc;
-    double angVel;
-    double tstep; 
-    
+  
+
    /*
     IMU::Preintegrated* mpImuPreintegrated;
     IMU::Calib mImuCalib;

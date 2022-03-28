@@ -178,8 +178,6 @@ public:
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
     string pathGNSS; //Martin GNSS
-    vector<vector <double>> GNSSrow; //Martin GNSS
-   // void readGNSS(const string &filename);
 
     // For debugging
     double GetTimeFromIMUInit();

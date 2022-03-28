@@ -127,6 +127,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
 #endif
 }
 
+
+
 #ifdef REGISTER_TIMES
 double calcAverage(vector<double> v_times)
 {
@@ -1486,7 +1488,7 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
     }
 
     //cout << "Incoming frame creation" << endl;
-
+                        
     if (mSensor == System::STEREO && !mpCamera2)
         mCurrentFrame = Frame(mImGray,imGrayRight,timestamp,mpORBextractorLeft,mpORBextractorRight,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     else if(mSensor == System::STEREO && mpCamera2)
@@ -1729,13 +1731,17 @@ void Tracking::PreintegrateIMU()
         tstepBetweenKFs.push_back(tstep); //GNSS Martin
    
     }
-
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
-
+  //  for (int k = 0; k < GNSS_data.size(); k ++) {
+    //    cout << "GNSS :" << k << endl; 
+     //   for( int g = 0; g < GNSS_data[k].size(); g++){
+      //      cout << "Data: " << GNSS_data[k][g] << endl; 
+       // }
+   // }
     //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
 }
 
@@ -2254,6 +2260,12 @@ void Tracking::Track()
             if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
                                    (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
                 CreateNewKeyFrame();
+            // Check if we need to insert a new keyframe
+            // if(bNeedKF && bOK)
+            if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                                   (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
+                CreateNewKeyFrame();
+
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();

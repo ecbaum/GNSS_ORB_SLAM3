@@ -830,7 +830,7 @@ public:
 
     void computeError(){
         const VertexPose4DoF* VPi = static_cast<const VertexPose4DoF*>(_vertices[0]);
-        const VertexPose4DoF* VPj = static_cast<const VertexPose4DoF*>(_vertices[1]);
+        const VertexPose4DoF* VPj = static_cast <const VertexPose4DoF*>(_vertices[1]);
         _error << LogSO3(VPi->estimate().Rcw[0]*VPj->estimate().Rcw[0].transpose()*dRij.transpose()),
                  VPi->estimate().Rcw[0]*(-VPj->estimate().Rcw[0].transpose()*VPj->estimate().tcw[0])+VPi->estimate().tcw[0] - dtij;
     }
@@ -841,6 +841,8 @@ public:
     Eigen::Matrix3d dRij;
     Eigen::Vector3d dtij;
 };
+
+
 
 } //namespace ORB_SLAM2
 
