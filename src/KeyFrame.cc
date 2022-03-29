@@ -98,12 +98,15 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     accBetweenKFs; //GNSS Martin
     angVelBetweenKFs; //GNSS Martin
     tstepBetweenKFs; //GNSS Martin}
-
-
     //Erik
 
+    fGF = false;
     mpImuPreintegratedToGNSS;
     timeStampGNSS;
+    GNSS_deltaT;
+    mPosb_x = 0.5;
+    mPosb_y = 0.5;
+    mPosb_z = 0.5;
 
     //E
 
@@ -585,6 +588,12 @@ void KeyFrame::SetErase()
 
 void KeyFrame::SetBadFlag()
 {
+    if(fGF){
+        mbBad = false;
+        cout << "Tried to remove GNSS frame, denied" << endl;
+        return;
+    }
+
     {
         unique_lock<mutex> lock(mMutexConnections);
         if(mnId==mpMap->GetInitKFid())
@@ -838,8 +847,13 @@ Eigen::Vector3f KeyFrame::GetAccBias()
     unique_lock<mutex> lock(mMutexPose);
     return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
-
-
+//Erik
+Eigen::Vector3f KeyFrame::GetPosBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Eigen::Vector3f(mPosb_x, mPosb_y, mPosb_z);
+}
+//E
 IMU::Bias KeyFrame::GetImuBias()
 {
     unique_lock<mutex> lock(mMutexPose);
@@ -1171,14 +1185,6 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 }
 
 
-
-
- //namespace ORB_SLAM
-
-//Erik
-
-
-
 void KeyFrame::setGNSS(){
     fGF = true;
     timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
@@ -1189,6 +1195,14 @@ void KeyFrame::setGNSS(){
 //namespace ORB_SLAM
 
 //Erik
+
+
+void KeyFrame::setGNSS(){
+    fGF = true;
+    timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
+    GNSS_deltaT = mTimeStamp - timeStampGNSS;
+}
+
 
 void KeyFrame::IntegrateToGNSS(){
 

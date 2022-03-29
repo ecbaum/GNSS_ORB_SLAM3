@@ -281,6 +281,7 @@ void Atlas::RemoveBadMaps()
         delete pMap;
         pMap = static_cast<Map*>(NULL);
     }*/
+    cout <<"removing bad map" << endl; //GNSS Martin
     mspBadMaps.clear();
 }
 

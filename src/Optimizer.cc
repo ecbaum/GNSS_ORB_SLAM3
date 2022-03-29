@@ -2589,7 +2589,16 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             optimizer.addVertex(VA);
         }
     }
-
+    //Erik
+    // EdgePosBias
+    EdgePosBias* edgePos = new EdgePosBias();
+    Eigen::Vector3d v(0.05,0.05,0.05);
+    edgePos->mBias = v;
+    KeyFrame* pKF_current = vpOptimizableKFs[N];
+    g2o::HyperGraph::Vertex* poseVertex =  optimizer.vertex(pKF_current->mnId);
+    edgePos->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(poseVertex));
+    optimizer.addEdge(edgePos);
+    //E
     // Create intertial constraints
     vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
     vector<EdgeGyroRW*> vegr(N,(EdgeGyroRW*)NULL);

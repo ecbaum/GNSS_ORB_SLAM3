@@ -717,6 +717,33 @@ void EdgeInertialGS::linearizeOplus()
     _jacobianOplus[7].block<3,1>(6,0) = Rbw1*(VP2->estimate().twb-VP1->estimate().twb-VV1->estimate()*dt);
 }
 
+//Erik
+EdgePosBias::EdgePosBias() : g2o::BaseMultiEdge<3,Eigen::Vector3d>()
+{
+    Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
+    setInformation(Info);
+}
+
+void EdgePosBias::computeError()
+{
+    const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);
+
+    const Eigen::Vector3d er = VP1->estimate().twb.cwiseProduct(mBias) - VP1->estimate().twb;
+    _error << er;
+}
+
+
+VertexPosBias::VertexPosBias(KeyFrame *pKF)
+{
+    setEstimate(pKF->GetPosBias().cast<double>());
+}
+
+
+
+
+//E
+
+
 EdgePriorPoseImu::EdgePriorPoseImu(ConstraintPoseImu *c)
 {
     resize(4);
@@ -853,11 +880,13 @@ Eigen::Matrix3d RightJacobianSO3(const double x, const double y, const double z)
     }
 }
 
+
 Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 {
     Eigen::Matrix3d W;
     W << 0.0, -w[2], w[1],w[2], 0.0, -w[0],-w[1],  w[0], 0.0;
     return W;
 }
+
 
 }

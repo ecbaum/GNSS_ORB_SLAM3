@@ -303,10 +303,11 @@ public:
 
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
+
     void IntegrateToGNSS();
     void setGNSS();
-
-    //void SetTestVec(std::vector<float> tVec); // GNSS Martin
+    Eigen::Vector3f GetPosBias();
+    //E
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -433,7 +434,7 @@ public:
     
     //Erik
 
- 
+
     IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
     double GNSS_deltaT;

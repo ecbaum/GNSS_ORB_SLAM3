@@ -842,6 +842,42 @@ public:
     Eigen::Vector3d dtij;
 };
 
+// Erik
+class EdgePosBias : public g2o::BaseMultiEdge<3,Eigen::Vector3d>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EdgePosBias();
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    void computeError();
+    Eigen::Vector3d mBias;
+};
+
+class VertexPosBias : public g2o::BaseVertex<3,Eigen::Vector3d>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    VertexPosBias(){}
+    VertexPosBias(KeyFrame* pKF);
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    virtual void setToOriginImpl() {
+        }
+
+    virtual void oplusImpl(const double* update_){
+        Eigen::Vector3d uba;
+        uba << update_[0], update_[1], update_[2];
+        setEstimate(estimate()+uba);
+    }
+};
+
+
+//E
 } //namespace ORB_SLAM2
 
 #endif // G2OTYPES_H

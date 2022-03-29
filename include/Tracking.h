@@ -170,7 +170,10 @@ public:
     double t0IMU; // time-stamp of IMU initialization
     bool mFastInit = false;
 
+
     vector<vector<double>> GNSS_data;
+    //Erik
+    int frame_counter_for_GNSS;
 
     int frame_counter_for_GNSS;
     vector<MapPoint*> GetLocalMapMPS();

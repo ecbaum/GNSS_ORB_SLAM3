@@ -162,7 +162,7 @@ public:
         return mbHasVelocity;
     }
 
-   //Erik
+    //Erik
     bool convertToGNSS;
 
 private:
@@ -181,7 +181,6 @@ private:
     Sophus::SE3<float> mTlr, mTrl;
     Eigen::Matrix<float,3,3> mRlr;
     Eigen::Vector3f mtlr;
-
 
     // IMU linear velocity
     Eigen::Vector3f mVw;

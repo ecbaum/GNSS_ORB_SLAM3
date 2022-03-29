@@ -2203,11 +2203,13 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
+
          frame_counter_for_GNSS++;
         if(frame_counter_for_GNSS%10 == 0 ){
             cout << "insert GNSS frame" << endl;
             mCurrentFrame.convertToGNSS = true;
         }
+
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -2253,8 +2255,12 @@ void Tracking::Track()
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
-            bool bNeedKF = NeedNewKeyFrame();
-              if(mCurrentFrame.convertToGNSS){
+
+            bool bNeedKF = NeedNewKeyFrame();   
+
+            // Check if we need to insert a new keyframe
+            // if(bNeedKF && bOK)
+            if(mCurrentFrame.convertToGNSS){
                 CreateNewKeyFrame();
             }else
             {
@@ -2263,11 +2269,8 @@ void Tracking::Track()
                 CreateNewKeyFrame(); 
                 }
             }
-            // Check if we need to insert a new keyframe
-            // if(bNeedKF && bOK)
-            //if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
-            //                       (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
-            //    CreateNewKeyFrame();
+            
+        
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -3047,8 +3050,8 @@ bool Tracking::TrackLocalMap()
     // More restrictive if there was a relocalization recently
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
-        return false;
-
+       return false; //Martin GNSS testar att sätta allt till true. 
+        //return true;
     if((mnMatchesInliers>10)&&(mState==RECENTLY_LOST))
         return true;
 
@@ -3058,6 +3061,7 @@ bool Tracking::TrackLocalMap()
         if((mnMatchesInliers<15 && mpAtlas->isImuInitialized())||(mnMatchesInliers<50 && !mpAtlas->isImuInitialized()))
         {
             return false;
+            //return true;
         }
         else
             return true;
@@ -3241,7 +3245,6 @@ void Tracking::CreateNewKeyFrame()
         return;
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
-
 
     if(mCurrentFrame.convertToGNSS){
         pKF->setGNSS();
