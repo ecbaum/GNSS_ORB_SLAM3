@@ -303,10 +303,8 @@ public:
 
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
-
-    void UpdateGNSSFrameIter();
-    void IntegrateBetweenGNSS();
-    bool bImu;
+    void IntegrateToGNSS();
+    void setGNSS();
 
     //void SetTestVec(std::vector<float> tVec); // GNSS Martin
 
@@ -434,11 +432,14 @@ public:
 
     
     //Erik
-    bool insertGNSS; //flag to insert GNSS frame (GF)
-    int GNSSiter;
-    IMU::Preintegrated* mpImuPreintegratedToGNSS; // prev KF -> GF
-    IMU::Preintegrated* mpImuPreintegratedFromGNSS; // If GF introduced, mpImuPreintegrated will be redefined as GF -> current KF
+
+ 
+    IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
+    double GNSS_deltaT;
+    bool bImu;
+    bool fGF;
+    float mPosb_x, mPosb_y, mPosb_z;
     //E
 
     //bool mbHasHessian;
@@ -523,7 +524,6 @@ protected:
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;
-    GNSSFrame* GF;
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
 

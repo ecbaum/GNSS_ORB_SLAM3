@@ -40,7 +40,7 @@
 
 namespace ORB_SLAM3
 {
-vector<vector<double>> readGNSS(const string &filename, vector<vector<double>> GNSSrow );
+vector<vector<double>> readGNSS(const string &filenames);
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
@@ -191,11 +191,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     
-
-    
-
     string pathGNSS = "../data/MH_01_easy/mav0/GNSS.csv";
-    GNSSrow; 
 
 
     //Initialize the Tracking thread
@@ -203,7 +199,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     cout << "Seq. Name: " << strSequence << endl;
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-    mpTracker->GNSS_data = readGNSS(pathGNSS,GNSSrow); //Loading GNSSdata to tracker. 
+    mpTracker->GNSS_data = readGNSS(pathGNSS); //Loading GNSSdata to tracker. 
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
@@ -311,13 +307,13 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         unique_lock<mutex> lock(mMutexReset);
         if(mbReset)
         {
-            //mpTracker->Reset();
+            mpTracker->Reset();
             mbReset = false;
             mbResetActiveMap = false;
         }
         else if(mbResetActiveMap)
         {
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -1562,7 +1558,7 @@ string System::CalculateCheckSum(string filename, int type)
 
 //Martin GNSS
 
-vector<vector<double>> readGNSS(const string &filename, vector<vector<double>> GNSSrow )
+vector<vector<double>> readGNSS(const string &filename )
 {
     std::ifstream f;
     std::cout << "reading csv file \n";
