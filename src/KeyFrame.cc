@@ -17,6 +17,7 @@
 */
 
 #include "KeyFrame.h"
+#include "GNSSFrame.h"
 #include "Converter.h"
 #include "ImuTypes.h"
 #include<mutex>
@@ -98,6 +99,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     angVelBetweenKFs; //GNSS Martin
     tstepBetweenKFs; //GNSS Martin}
     //Erik
+
     fGF = false;
     mpImuPreintegratedToGNSS;
     timeStampGNSS;
@@ -105,6 +107,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mPosb_x = 0.5;
     mPosb_y = 0.5;
     mPosb_z = 0.5;
+
     //E
 
 }
@@ -1193,6 +1196,14 @@ void KeyFrame::setGNSS(){
 
 //Erik
 
+
+void KeyFrame::setGNSS(){
+    fGF = true;
+    timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
+    GNSS_deltaT = mTimeStamp - timeStampGNSS;
+}
+
+
 void KeyFrame::IntegrateToGNSS(){
 
     mpImuPreintegratedToGNSS = new IMU::Preintegrated(mImuBias,mImuCalib);
@@ -1217,6 +1228,7 @@ void KeyFrame::IntegrateToGNSS(){
         }
     }
 }
+
 
 
 //E

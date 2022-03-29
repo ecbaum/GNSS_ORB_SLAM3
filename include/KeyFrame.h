@@ -28,6 +28,7 @@
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
+#include "GNSSFrame.h"
 
 #include "GeometricCamera.h"
 #include "SerializationUtils.h"
@@ -46,7 +47,7 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
-
+class GNSSFrame;
 class GeometricCamera;
 
 class KeyFrame
@@ -303,14 +304,13 @@ public:
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
 
-    //Erik
     void IntegrateToGNSS();
     void setGNSS();
     Eigen::Vector3f GetPosBias();
     //E
+
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
-
     static long unsigned int nNextId;
     long unsigned int mnId;
     const long unsigned int mnFrameId;
@@ -434,6 +434,7 @@ public:
     
     //Erik
 
+
     IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
     double GNSS_deltaT;
@@ -524,7 +525,6 @@ protected:
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;
-
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
 

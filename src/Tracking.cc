@@ -1800,7 +1800,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-
     if (bStepByStep)
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
@@ -2203,11 +2202,15 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
-        frame_counter_for_GNSS++;
-        if(frame_counter_for_GNSS%10 == 0){
+
+
+         frame_counter_for_GNSS++;
+        if(frame_counter_for_GNSS%10 == 0 ){
             cout << "insert GNSS frame" << endl;
             mCurrentFrame.convertToGNSS = true;
         }
+
+
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
@@ -2252,6 +2255,7 @@ void Tracking::Track()
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
+
             bool bNeedKF = NeedNewKeyFrame();   
 
             // Check if we need to insert a new keyframe
@@ -2266,8 +2270,7 @@ void Tracking::Track()
                 }
             }
             
-            
-            
+        
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -3247,6 +3250,7 @@ void Tracking::CreateNewKeyFrame()
         pKF->setGNSS();
         cout << "GNSS keyframe inserted" << endl;
     }
+
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
         pKF->bImu = true;
 

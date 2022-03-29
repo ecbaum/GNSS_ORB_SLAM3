@@ -8,25 +8,49 @@ File.version: "1.0"
 Camera.type: "PinHole"
 
 # Camera calibration and distortion parameters (OpenCV) 
-Camera1.fx: 458.654
-Camera1.fy: 457.296
-Camera1.cx: 367.215
-Camera1.cy: 248.375
+#Camera1.fx: 458.654
+#Camera1.fy: 457.296
+#Camera1.cx: 367.215
+#Camera1.cy: 248.375
 
-Camera1.k1: -0.28340811
-Camera1.k2: 0.07395907
-Camera1.p1: 0.00019359
-Camera1.p2: 1.76187114e-05
+Camera1.fx: 1857.4752797615988
+Camera1.fy: 1869.2155909761746
+Camera1.cx: 1039.692658811044
+Camera1.cy: 739.3362262994145
+
+Camera1.k1: -3.0451652061637519e-01
+Camera1.k2: 3.8894492749157322e-02
+Camera1.p1: 1.0517466490567872e-03
+Camera1.p2:  -5.5095449411338973e-04
+#Camera1.k3: 1.7054732639063463e-01
+
+
+#Camera1.k1: -3.0451652061637519e-01
+#Camera1.k2: 3.8894492749157322e-02
+#Camera1.p1: -5.5095449411338973e-04
+#Camera1.p2: 1.7054732639063463e-01 
+#Camera1.k3: 1.0517466490567872e-03 
+
+
+#Camera1.k1: -0.28340811
+#Camera1.k2: 0.07395907
+#Camera1.p1: 0.00019359
+#Camera1.p2: 1.76187114e-05
 
 # Camera resolution
-Camera.width: 752
-Camera.height: 480
+Camera.width: 2048
+Camera.height: 1536
 
-Camera.newWidth: 600
-Camera.newHeight: 350
+# Camera resolution
+#Camera.width: 752
+#Camera.height: 480
+
+Camera.newWidth: 752
+Camera.newHeight: 564
 
 # Camera frames per second 
-Camera.fps: 20
+#Camera.fps: 20
+Camera.fps: 10
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -36,17 +60,17 @@ IMU.T_b_c1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: f
-   data: [0.0148655429818, -0.999880929698, 0.00414029679422, -0.0216401454975,
-         0.999557249008, 0.0149672133247, 0.025715529948, -0.064676986768,
-        -0.0257744366974, 0.00375618835797, 0.999660727178, 0.00981073058949,
-         0.0, 0.0, 0.0, 1.0]
+   data: [ -4.7324731432882849e-03, 1.2489446573634877e-02, 9.9991080473321836e-01, 1.8499563388803192e-01,
+        -9.9990518155032682e-01, -1.2990043852130206e-02, -4.5701935984787667e-03, -2.4227446820327757e-02,
+        1.2931806012923930e-02, -9.9983762305936663e-01, 1.2549737377333781e-02, -3.3589470159409335e-01,
+        0., 0., 0., 1. ]
 
 # IMU noise
 IMU.NoiseGyro: 1.7e-4 #1.6968e-04
 IMU.NoiseAcc: 2.0000e-3 #2.0e-3
 IMU.GyroWalk: 1.9393e-05 
 IMU.AccWalk: 3.0000e-03 # 3e-03
-IMU.Frequency: 200.0
+IMU.Frequency: 100.0
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
