@@ -104,6 +104,9 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 
     mpImuPreintegratedToGNSS;
     timeStampGNSS;
+    mPosb_x = 0.5;
+    mPosb_y = 0.5;
+    mPosb_z = 0.5;
 
     //E
 
@@ -839,7 +842,13 @@ Eigen::Vector3f KeyFrame::GetAccBias()
     return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
 
-
+//Erik
+Eigen::Vector3f KeyFrame::GetPosBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Eigen::Vector3f(mPosb_x, mPosb_y, mPosb_z);
+}
+//E
 IMU::Bias KeyFrame::GetImuBias()
 {
     unique_lock<mutex> lock(mMutexPose);

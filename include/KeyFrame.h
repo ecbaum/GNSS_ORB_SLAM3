@@ -305,6 +305,7 @@ public:
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
     void IntegrateToGNSS();
     void setGNSS();
+    Eigen::Vector3f GetPosBias();
 
     //void SetTestVec(std::vector<float> tVec); // GNSS Martin
 
