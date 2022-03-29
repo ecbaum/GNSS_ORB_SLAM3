@@ -306,6 +306,7 @@ public:
     //Erik
     void IntegrateToGNSS();
     void setGNSS();
+    Eigen::Vector3f GetPosBias();
     //E
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
@@ -438,6 +439,7 @@ public:
     double GNSS_deltaT;
     bool bImu;
     bool fGF;
+    float mPosb_x, mPosb_y, mPosb_z;
     //E
 
     //bool mbHasHessian;

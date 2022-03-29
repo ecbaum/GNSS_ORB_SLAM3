@@ -731,7 +731,18 @@ void EdgePosBias::computeError()
     const Eigen::Vector3d er = VP1->estimate().twb.cwiseProduct(mBias) - VP1->estimate().twb;
     _error << er;
 }
+
+
+VertexPosBias::VertexPosBias(KeyFrame *pKF)
+{
+    setEstimate(pKF->GetPosBias().cast<double>());
+}
+
+
+
+
 //E
+
 
 EdgePriorPoseImu::EdgePriorPoseImu(ConstraintPoseImu *c)
 {
