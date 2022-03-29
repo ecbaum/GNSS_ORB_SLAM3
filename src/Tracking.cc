@@ -95,7 +95,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;
     mnNumDataset = 0;
-
+    // Erik
+    frame_counter_for_GNSS = 0;
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
     std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
     for(GeometricCamera* pCam : vpCams)
@@ -1799,7 +1800,6 @@ void Tracking::ResetFrameIMU()
 
 void Tracking::Track()
 {
-
     if (bStepByStep)
     {
         std::cout << "Tracking: Waiting to the next step" << std::endl;
@@ -2203,6 +2203,12 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
+         frame_counter_for_GNSS++;
+        if(frame_counter_for_GNSS%10 == 0 ){
+            cout << "insert GNSS frame" << endl;
+            mCurrentFrame.convertToGNSS = true;
+        }
+
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
@@ -2248,12 +2254,20 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
             bool bNeedKF = NeedNewKeyFrame();
-
+              if(mCurrentFrame.convertToGNSS){
+                CreateNewKeyFrame();
+            }else
+            {
+                if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
+                CreateNewKeyFrame(); 
+                }
+            }
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
-            if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
-                                   (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
-                CreateNewKeyFrame();
+            //if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+            //                       (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
+            //    CreateNewKeyFrame();
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -3227,6 +3241,12 @@ void Tracking::CreateNewKeyFrame()
         return;
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
+
+
+    if(mCurrentFrame.convertToGNSS){
+        pKF->setGNSS();
+        cout << "GNSS keyframe inserted" << endl;
+    }
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
         pKF->bImu = true;

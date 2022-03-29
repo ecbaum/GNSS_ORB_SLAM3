@@ -138,6 +138,7 @@ public:
     long unsigned int GetNumLivedKF();
 
     long unsigned int GetNumLivedMP();
+    int GNSSiter;
 
 protected:
 

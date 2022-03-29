@@ -116,7 +116,6 @@ public:
 #endif
 
 public:
-
     // Tracking states
     enum eTrackingState{
         SYSTEM_NOT_READY=-1,
@@ -171,7 +170,9 @@ public:
     double t0IMU; // time-stamp of IMU initialization
     bool mFastInit = false;
 
+    vector<vector<double>> GNSS_data;
 
+    int frame_counter_for_GNSS;
     vector<MapPoint*> GetLocalMapMPS();
 
     bool mbWriteStats;

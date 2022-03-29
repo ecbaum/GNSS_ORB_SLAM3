@@ -162,7 +162,8 @@ public:
         return mbHasVelocity;
     }
 
-
+   //Erik
+    bool convertToGNSS;
 
 private:
     //Sophus/Eigen migration

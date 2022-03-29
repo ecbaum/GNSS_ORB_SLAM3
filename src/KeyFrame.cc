@@ -17,6 +17,7 @@
 */
 
 #include "KeyFrame.h"
+#include "GNSSFrame.h"
 #include "Converter.h"
 #include "ImuTypes.h"
 #include<mutex>
@@ -100,11 +101,10 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
 
 
     //Erik
-    insertGNSS = false;
-    GNSSiter = 0;
+
     mpImuPreintegratedToGNSS;
-    mpImuPreintegratedFromGNSS;
     timeStampGNSS;
+
     //E
 
 }
@@ -1176,43 +1176,45 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
  //namespace ORB_SLAM
 
 //Erik
-void KeyFrame::UpdateGNSSFrameIter() 
-{   
-    GNSSiter += 1;
-    if(GNSSiter%5 == 0){
-        insertGNSS = true;
-    }else{
-        insertGNSS = true;
-    }  
+
+
+
+void KeyFrame::setGNSS(){
+    fGF = true;
+    timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
+    GNSS_deltaT = mTimeStamp - timeStampGNSS;
 }
 
-void KeyFrame::IntegrateBetweenGNSS(){
-    mpImuPreintegratedToGNSS = new IMU::Preintegrated(mPrevKF->mImuBias,mPrevKF->mImuCalib);
-    
-    //double tIter = tStart;
-    double _tempFraction = 0.6; //Before GNSS time is implmented and loaded, we use _tempFraction as to "simualte" what fraction of delta time from last to current keyframe its located
 
-    bool _nextPreIntInit = false;
-    std::cout << "from previous keyframe to GNSS node" << std::endl;
-    for(int i = 0; i < accBetweenKFs.size(); i++){
+//namespace ORB_SLAM
+
+//Erik
+
+void KeyFrame::IntegrateToGNSS(){
+
+    mpImuPreintegratedToGNSS = new IMU::Preintegrated(mImuBias,mImuCalib);
+
+    std::cout << "Integration from current keyframe to GNSS node" << std::endl;
+
+    double deltat_sum = 0;
+    float t_step_diff = 0;
+    for(int i = accBetweenKFs.size()-1; i > 0; i--){
+
         Eigen::Matrix<float, 3, 1> acc = accBetweenKFs[i];
         Eigen::Matrix<float, 3, 1> angVel = angVelBetweenKFs[i];
-        double tstep = tstepBetweenKFs[i];
+        double tstep = -tstepBetweenKFs[i];
+        deltat_sum -= tstep; 
         
-        /*tIter += tstep;
-        if tIter < timeStampGNSS{*/
-        
-        if(i < accBetweenKFs.size()*_tempFraction){
+        if(deltat_sum < GNSS_deltaT){ 
             mpImuPreintegratedToGNSS->IntegrateNewMeasurement(acc,angVel,tstep);
-        }else if(!_nextPreIntInit){
-            mpImuPreintegratedFromGNSS = new IMU::Preintegrated(mpImuPreintegratedToGNSS);
-            _nextPreIntInit = true;
-            std::cout << "from GNSS node to current keyframe" << std::endl;
-        }else{
-            mpImuPreintegratedFromGNSS->IntegrateNewMeasurement(acc,angVel,tstep);
+        }else{ //Integrate the rest
+            deltat_sum += tstep; //Remove last step
+            t_step_diff = GNSS_deltaT - deltat_sum; //Integrate the rest
+            mpImuPreintegratedToGNSS->IntegrateNewMeasurement(acc,angVel,-t_step_diff);
         }
     }
 }
+
 
 
 //E

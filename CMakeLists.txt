@@ -4,7 +4,7 @@ project(ORB_SLAM3)
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
 ENDIF()
-
+add_definitions(-w)
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall   -O3")
@@ -64,6 +64,7 @@ src/FrameDrawer.cc
 src/Converter.cc
 src/MapPoint.cc
 src/KeyFrame.cc
+src/GNSSFrame.cc
 src/Atlas.cc
 src/Map.cc
 src/MapDrawer.cc
@@ -92,6 +93,7 @@ include/FrameDrawer.h
 include/Converter.h
 include/MapPoint.h
 include/KeyFrame.h
+include/GNSSFrame.h
 include/Atlas.h
 include/Map.h
 include/MapDrawer.h

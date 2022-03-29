@@ -65,6 +65,8 @@ int main(int argc, char *argv[])
     vector<int> nImages;
     vector<int> nImu;
     vector<int> first_imu(num_seq,0);
+    
+
 
     vstrImageFilenames.resize(num_seq);
     vTimestampsCam.resize(num_seq);
@@ -73,10 +75,10 @@ int main(int argc, char *argv[])
     vTimestampsImu.resize(num_seq);
     nImages.resize(num_seq);
     nImu.resize(num_seq);
-
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
+        cout << seq <<endl;
         cout << "Loading images for sequence " << seq << "...";
 
         string pathSeq(argv[(2*seq) + 3]);
@@ -84,13 +86,13 @@ int main(int argc, char *argv[])
 
         string pathCam0 = pathSeq + "/mav0/cam0/data";
         string pathImu = pathSeq + "/mav0/imu0/data.csv";
-
+        
         LoadImages(pathCam0, pathTimeStamps, vstrImageFilenames[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
 
         cout << "Loading IMU for sequence " << seq << "...";
         LoadIMU(pathImu, vTimestampsImu[seq], vAcc[seq], vGyro[seq]);
-        cout << "LOADED!" << endl;
+        cout << "LOADED!" << endl;  
 
         nImages[seq] = vstrImageFilenames[seq].size();
         tot_images += nImages[seq];
@@ -272,6 +274,18 @@ void LoadImages(const string &strImagePath, const string &strPathTimes,
         }
     }
 }
+
+void LoadGNSS(const string &strGNSSPath){
+    ifstream fGNSS;
+    fGNSS.open(strGNSSPath);
+   // while(!fGNSS.eof())
+    //{
+        //getline(fGNSS);
+    //}
+    
+    
+}
+
 
 void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
 {
