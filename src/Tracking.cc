@@ -97,6 +97,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     // Erik
     frame_counter_for_GNSS = 0;
     GNSS_counter = 0;
+    mECEF;
+
 
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
     std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
@@ -2206,24 +2208,26 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
+/*
          // Erik GNSS
         // frame_counter_for_GNSS++;
        // if(frame_counter_for_GNSS%5 == 0 ){
           //  cout << "insert GNSS frame" << endl;
             //mCurrentFrame.convertToGNSS = true;
-       // }
-        cout << "prev: " << mCurrentFrame.mpPrevFrame->mTimeStamp; 
+            cout << "prev: " << mCurrentFrame.mpPrevFrame->mTimeStamp; 
         cout << "Data: " << GNSS_data[GNSS_counter][0]; 
         cout << "current: " << mCurrentFrame.mTimeStamp << endl; 
-
+        }
+       */
+        
    if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 
             mCurrentFrame.convertToGNSS = true;
-            t_PrevFrame.push_back(mCurrentFrame.mTimeStamp); 
-            t_GNSS_ecef.push_back(GNSS_data[GNSS_counter][0]);
-            x_GNSS_ecef.push_back(GNSS_data[GNSS_counter][1]);
-            y_GNSS_ecef.push_back(GNSS_data[GNSS_counter][2]);
-            z_GNSS_ecef.push_back(GNSS_data[GNSS_counter][3]);
+            mECEF.push_back(mCurrentFrame.mTimeStamp); 
+            mECEF.push_back(GNSS_data[GNSS_counter][0]);
+            mECEF.push_back(GNSS_data[GNSS_counter][1]);
+            mECEF.push_back(GNSS_data[GNSS_counter][2]);
+            mECEF.push_back(GNSS_data[GNSS_counter][3]);
             GNSS_counter++;
        }
 
@@ -3265,6 +3269,8 @@ void Tracking::CreateNewKeyFrame()
     if(mCurrentFrame.convertToGNSS){
         pKF->setGNSS();
         cout << "GNSS keyframe inserted" << endl;
+        pKF-> mECEF = mECEF; 
+        mECEF.clear();  
     }
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
@@ -3292,16 +3298,7 @@ void Tracking::CreateNewKeyFrame()
         tstepBetweenKFs.clear();
 
         if(mCurrentFrame.convertToGNSS){
-            pKF-> t_PrevFrame = t_PrevFrame; 
-            pKF-> t_GNSS_ecef = t_GNSS_ecef;
-            pKF-> x_GNSS_ecef = x_GNSS_ecef ;
-            pKF-> y_GNSS_ecef = y_GNSS_ecef;
-            pKF-> z_GNSS_ecef = z_GNSS_ecef;
-            t_PrevFrame.clear(); 
-            t_GNSS_ecef.clear();
-            x_GNSS_ecef.clear();
-            y_GNSS_ecef.clear();
-            z_GNSS_ecef.clear();   
+         
         }
     
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)

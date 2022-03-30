@@ -227,11 +227,15 @@ protected:
     vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
     vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
     vector<double>tstepBetweenKFs; //GNSS Martin
-     vector<double> t_PrevFrame;
-     vector<double> t_GNSS_ecef;
-     vector<double> x_GNSS_ecef;
-     vector<double> y_GNSS_ecef;
-     vector<double> z_GNSS_ecef;
+    /* Inside mECEF you'll find: 
+    t_PrevFrame;
+    t_GNSS_ecef;
+    x_GNSS_ecef;
+    y_GNSS_ecef;
+    z_GNSS_ecef;
+     */
+     vector<double> mECEF;
+
    
     // Perform preintegration from last frame
     void PreintegrateIMU();
