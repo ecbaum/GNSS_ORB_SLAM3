@@ -94,12 +94,17 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     mImuBias = F.mImuBias;
     SetPose(F.GetPose());
     mnOriginMapId = pMap->GetId();
+    //GNSS Martin
+    accBetweenKFs; 
+    angVelBetweenKFs; 
+    tstepBetweenKFs; 
 
-    accBetweenKFs; //GNSS Martin
-    angVelBetweenKFs; //GNSS Martin
-    tstepBetweenKFs; //GNSS Martin}
-
-
+    t_PrevFrame; 
+    t_GNSS_ecef;
+    x_GNSS_ecef;
+    y_GNSS_ecef;
+    z_GNSS_ecef;
+    //GNSS Martin
     //Erik
 
     mpImuPreintegratedToGNSS;
@@ -305,7 +310,7 @@ int KeyFrame::GetNumberMPs()
     {
         if(!mvpMapPoints[i])
             continue;
-        numberMPs++;
+        numberMPs++;//GNSS Martin
     }
     return numberMPs;
 }

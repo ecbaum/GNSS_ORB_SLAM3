@@ -2663,6 +2663,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setInformation(InfoA);           
 
             optimizer.addEdge(vear[i]);
+         /*
             if(i == N-1){
                 cout << "N: " << N <<endl;
                 cout << "1: " << endl;
@@ -2679,6 +2680,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 //optimizer.addEdge(edgePos);
                 cout << "6: " << endl;
             }
+            */
         }
         else
             cout << "ERROR building inertial edge" << endl;

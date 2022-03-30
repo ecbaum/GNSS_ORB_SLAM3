@@ -1731,14 +1731,9 @@ void Tracking::PreintegrateIMU()
         angVelBetweenKFs.push_back(angVel); //GNSS Martin
         tstepBetweenKFs.push_back(tstep); //GNSS Martin
 
-       // if(mvImuFromLastFrame[i].t < GNSS_data[0][GNSS_counter] && mvImuFromLastFrame[i+1].t > GNSS_data[GNSS_counter]){
-         //   cout << "Insert NEW SPP keyframe" << endl; 
-          //  GNSS_counter++;
-        //}
-       // cout <<"Test GnssData"<< GNSS_data[0][GNSS_counter] << endl;
     }
+ 
     
-
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
@@ -2211,12 +2206,27 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
+         // Erik GNSS
+        // frame_counter_for_GNSS++;
+       // if(frame_counter_for_GNSS%5 == 0 ){
+          //  cout << "insert GNSS frame" << endl;
+            //mCurrentFrame.convertToGNSS = true;
+       // }
+        cout << "prev: " << mCurrentFrame.mpPrevFrame->mTimeStamp; 
+        cout << "Data: " << GNSS_data[GNSS_counter][0]; 
+        cout << "current: " << mCurrentFrame.mTimeStamp << endl; 
 
-         frame_counter_for_GNSS++;
-        if(frame_counter_for_GNSS%10 == 0 ){
-            cout << "insert GNSS frame" << endl;
+   if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
+            cout << "Insert NEW SPP keyframe" << endl; 
             mCurrentFrame.convertToGNSS = true;
-        }
+            t_PrevFrame.push_back(mCurrentFrame.mTimeStamp); 
+            t_GNSS_ecef.push_back(GNSS_data[GNSS_counter][0]);
+            x_GNSS_ecef.push_back(GNSS_data[GNSS_counter][1]);
+            y_GNSS_ecef.push_back(GNSS_data[GNSS_counter][2]);
+            z_GNSS_ecef.push_back(GNSS_data[GNSS_counter][3]);
+            GNSS_counter++;
+       }
+
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -3273,7 +3283,6 @@ void Tracking::CreateNewKeyFrame()
         Verbose::PrintMess("No last KF in KF creation!!", Verbose::VERBOSITY_NORMAL);
     
     // Reset preintegration from last KF (Create new object)
-           // cout << "tstep:"<< endl;
     
         pKF->accBetweenKFs = accBetweenKFs; //GNSS Martin
         pKF->angVelBetweenKFs = angVelBetweenKFs; //GNSS Martin
@@ -3281,14 +3290,20 @@ void Tracking::CreateNewKeyFrame()
         accBetweenKFs.clear();
         angVelBetweenKFs.clear();
         tstepBetweenKFs.clear();
-    //for (int i = 0; i< testVec.size();i++){
 
-        //cout << testVec[i];
-    //}
-
-   // cout << endl;
+        if(mCurrentFrame.convertToGNSS){
+            pKF-> t_PrevFrame = t_PrevFrame; 
+            pKF-> t_GNSS_ecef = t_GNSS_ecef;
+            pKF-> x_GNSS_ecef = x_GNSS_ecef ;
+            pKF-> y_GNSS_ecef = y_GNSS_ecef;
+            pKF-> z_GNSS_ecef = z_GNSS_ecef;
+            t_PrevFrame.clear(); 
+            t_GNSS_ecef.clear();
+            x_GNSS_ecef.clear();
+            y_GNSS_ecef.clear();
+            z_GNSS_ecef.clear();   
+        }
     
-
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
         mpImuPreintegratedFromLastKF = new IMU::Preintegrated(pKF->GetImuBias(),pKF->mImuCalib);
