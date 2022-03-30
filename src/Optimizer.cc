@@ -2591,13 +2591,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
     //Erik
     // EdgePosBias
-    EdgePosBias* edgePos = new EdgePosBias();
-    Eigen::Vector3d v(0.05,0.05,0.05);
-    edgePos->mBias = v;
-    KeyFrame* pKF_current = vpOptimizableKFs[N];
-    g2o::HyperGraph::Vertex* poseVertex =  optimizer.vertex(pKF_current->mnId);
-    edgePos->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(poseVertex));
-    optimizer.addEdge(edgePos);
+
     //E
     // Create intertial constraints
     vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
@@ -2607,6 +2601,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
+
 
         if(!pKFi->mPrevKF)
         {
@@ -2620,7 +2615,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+1);
             g2o::HyperGraph::Vertex* VG1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+2);
             g2o::HyperGraph::Vertex* VA1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+3);
-            g2o::HyperGraph::Vertex* VP2 =  optimizer.vertex(pKFi->mnId);
+            g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
             g2o::HyperGraph::Vertex* VV2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
             g2o::HyperGraph::Vertex* VG2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
             g2o::HyperGraph::Vertex* VA2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
@@ -2668,6 +2663,22 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setInformation(InfoA);           
 
             optimizer.addEdge(vear[i]);
+            if(i == N-1){
+                cout << "N: " << N <<endl;
+                cout << "1: " << endl;
+                EdgePosBias* edgePos = new EdgePosBias();
+                cout << "2: " << endl;
+                Eigen::Vector3d v(1.05,1.05,1.05);
+                cout << "3: " << endl;
+                edgePos->mBias = v;
+                cout << "4: " << endl;
+        
+        
+               // edgePos->setVertex(0,VP2);  
+                cout << "5: " << endl;
+                //optimizer.addEdge(edgePos);
+                cout << "6: " << endl;
+            }
         }
         else
             cout << "ERROR building inertial edge" << endl;

@@ -171,7 +171,7 @@ public:
     bool mFastInit = false;
 
     vector<vector<double>> GNSS_data;
-
+    int GNSS_counter;
     int frame_counter_for_GNSS;
     vector<MapPoint*> GetLocalMapMPS();
 

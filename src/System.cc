@@ -191,7 +191,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     
-    string pathGNSS = "../data/MH_01_easy/mav0/GNSS.csv";
+    string pathGNSS = "../data/MH_01_easy/mav0/SPPGPS.txt";
 
 
     //Initialize the Tracking thread

@@ -91,12 +91,13 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
             }
         }
     }
-
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;
     mnNumDataset = 0;
     // Erik
     frame_counter_for_GNSS = 0;
+    GNSS_counter = 0;
+
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
     std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
     for(GeometricCamera* pCam : vpCams)
@@ -1729,14 +1730,22 @@ void Tracking::PreintegrateIMU()
         accBetweenKFs.push_back(acc); //GNSS Martin
         angVelBetweenKFs.push_back(angVel); //GNSS Martin
         tstepBetweenKFs.push_back(tstep); //GNSS Martin
-   
+
+       // if(mvImuFromLastFrame[i].t < GNSS_data[0][GNSS_counter] && mvImuFromLastFrame[i+1].t > GNSS_data[GNSS_counter]){
+         //   cout << "Insert NEW SPP keyframe" << endl; 
+          //  GNSS_counter++;
+        //}
+       // cout <<"Test GnssData"<< GNSS_data[0][GNSS_counter] << endl;
     }
+    
 
     mCurrentFrame.mpImuPreintegratedFrame = pImuPreintegratedFromLastFrame;
     mCurrentFrame.mpImuPreintegrated = mpImuPreintegratedFromLastKF;
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
+    
+    
 
     //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
 }
