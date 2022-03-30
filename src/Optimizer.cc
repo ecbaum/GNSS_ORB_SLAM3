@@ -2589,16 +2589,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             optimizer.addVertex(VA);
         }
     }
-    //Erik
-    // EdgePosBias
-    EdgePosBias* edgePos = new EdgePosBias();
-    Eigen::Vector3d v(0.05,0.05,0.05);
-    edgePos->mBias = v;
-    KeyFrame* pKF_current = vpOptimizableKFs[N];
-    g2o::HyperGraph::Vertex* poseVertex =  optimizer.vertex(pKF_current->mnId);
-    edgePos->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(poseVertex));
-    optimizer.addEdge(edgePos);
-    //E
+
     // Create intertial constraints
     vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
     vector<EdgeGyroRW*> vegr(N,(EdgeGyroRW*)NULL);
@@ -2620,7 +2611,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             g2o::HyperGraph::Vertex* VV1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+1);
             g2o::HyperGraph::Vertex* VG1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+2);
             g2o::HyperGraph::Vertex* VA1 = optimizer.vertex(maxKFid+3*(pKFi->mPrevKF->mnId)+3);
-            g2o::HyperGraph::Vertex* VP2 =  optimizer.vertex(pKFi->mnId);
+            g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
             g2o::HyperGraph::Vertex* VV2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
             g2o::HyperGraph::Vertex* VG2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
             g2o::HyperGraph::Vertex* VA2 = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
@@ -2666,7 +2657,29 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setVertex(1,VA2);
             Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3,3>(12,12).cast<double>().inverse();
             vear[i]->setInformation(InfoA);           
+            if(i == N-1){
 
+                cout << "N: " << N <<endl;
+                cout << "1: " << endl;
+                EdgePosBias2* edgePos = new EdgePosBias2();
+                cout << "2: " << endl;
+                VertexPosBias* vertexBias = new VertexPosBias(pKFi);
+                cout << "3: " << endl;
+                edgePos->setVertex(0,VP2);
+                cout << "4: " << endl;
+                edgePos->setVertex(1,vertexBias);
+                cout << "5: " << endl;
+                optimizer.addEdge(edgePos);
+                cout << "6: " << endl;
+
+                /*
+                EdgePosBias3* edgePos = new EdgePosBias3();
+                Eigen::Vector3d v(1.05,1.05,1.05);
+                edgePos->mBias = v;
+                edgePos->setVertex(0,VP2)
+                optimizer.addEdge(edgePos);
+                */
+            }
             optimizer.addEdge(vear[i]);
         }
         else

@@ -877,6 +877,43 @@ public:
     }
 };
 
+class EdgePosBias2 : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,VertexPose,VertexPosBias>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgePosBias2(){}
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    void computeError(){
+        const VertexPose* VP1= static_cast<const VertexPose*>(_vertices[0]);
+        const VertexPosBias* VG2= static_cast<const VertexPosBias*>(_vertices[1]);
+        _error = VP1->estimate().twb.cwiseProduct(VG2->estimate()) - VP1->estimate().twb;
+    }
+
+};
+
+class EdgePosBias3 : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexPose>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgePosBias3(){}
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    Eigen::Vector3d mBias;
+    void computeError(){
+        const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[0]);
+        const Eigen::Vector3d er = VPose->estimate().twb.cwiseProduct(mBias) - VPose->estimate().twb;
+
+        _error = er;
+    }
+
+};
 
 //E
 
