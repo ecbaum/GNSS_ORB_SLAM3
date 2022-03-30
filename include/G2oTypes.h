@@ -915,6 +915,50 @@ public:
 
 };
 
+class VertexECEFframe : public g2o::BaseVertex<6,Eigen::Matrix4d>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    VertexECEFframe(){
+        setEstimate(Eigen::Matrix<double, 4, 4>::Identity(4,4));
+    }
+
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    virtual void setToOriginImpl() {
+        }
+    /*
+    virtual void oplusImpl(const double* update_){
+        _estimate.Update(update_);
+        updateCache();
+    }*/
+};
+
+class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexECEFframe>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgeECEFToLocal(){}
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    Eigen::Vector3d posPose, poseECEF;
+
+    const VertexECEFframe* TF = static_cast<const VertexECEFframe*>(_vertices[0]);
+    Eigen::Matrix3d R = TF->estimate().block<3,3>(0,0);
+    Eigen::Vector3d T = TF->estimate().block<1,3>(0,3);
+
+    void computeError(){
+        _error = R*poseECEF + T - posPose;
+    }
+
+};
+
+
 //E
 
 } //namespace ORB_SLAM2
