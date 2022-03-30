@@ -171,7 +171,7 @@ public:
     bool mFastInit = false;
 
     vector<vector<double>> GNSS_data;
-
+    int GNSS_counter;
     int frame_counter_for_GNSS;
     vector<MapPoint*> GetLocalMapMPS();
 
@@ -227,6 +227,15 @@ protected:
     vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
     vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
     vector<double>tstepBetweenKFs; //GNSS Martin
+    /* Inside mECEF you'll find: 
+    t_PrevFrame;
+    t_GNSS_ecef;
+    x_GNSS_ecef;
+    y_GNSS_ecef;
+    z_GNSS_ecef;
+     */
+     vector<double> mECEF;
+
    
     // Perform preintegration from last frame
     void PreintegrateIMU();

@@ -860,4 +860,28 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
     return W;
 }
 
+
+//Erik
+EdgePosBias::EdgePosBias() : g2o::BaseMultiEdge<3,Eigen::Vector3d>()
+{
+    Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
+    setInformation(Info);
+}
+
+void EdgePosBias::computeError()
+{
+    const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);
+
+    const Eigen::Vector3d er = VP1->estimate().twb.cwiseProduct(mBias) - VP1->estimate().twb;
+    _error << er;
+}
+
+
+VertexPosBias::VertexPosBias(KeyFrame *pKF)
+{
+    setEstimate(pKF->GetPosBias().cast<double>());
+}
+
+
+
 }

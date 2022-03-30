@@ -90,20 +90,33 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
         mVw = F.GetVelocity();
         mbHasVelocity = true;
     }
-    
+    fGF = false;
     mImuBias = F.mImuBias;
     SetPose(F.GetPose());
     mnOriginMapId = pMap->GetId();
+    //GNSS Martin
+    accBetweenKFs; 
+    angVelBetweenKFs; 
+    tstepBetweenKFs; 
 
-    accBetweenKFs; //GNSS Martin
-    angVelBetweenKFs; //GNSS Martin
-    tstepBetweenKFs; //GNSS Martin}
-
-
+    /* Inside the mECEC you'llfind: 
+    t_PrevFrame; 
+    t_GNSS_ecef;
+    x_GNSS_ecef;
+    y_GNSS_ecef;
+    z_GNSS_ecef;
+    */
+  
+    mECEF;
+    
+    //GNSS Martin
     //Erik
 
     mpImuPreintegratedToGNSS;
     timeStampGNSS;
+    mPosb_x = 0.5;
+    mPosb_y = 0.5;
+    mPosb_z = 0.5;
 
     //E
 
@@ -302,7 +315,7 @@ int KeyFrame::GetNumberMPs()
     {
         if(!mvpMapPoints[i])
             continue;
-        numberMPs++;
+        numberMPs++;//GNSS Martin
     }
     return numberMPs;
 }
@@ -839,7 +852,13 @@ Eigen::Vector3f KeyFrame::GetAccBias()
     return Eigen::Vector3f(mImuBias.bax, mImuBias.bay, mImuBias.baz);
 }
 
-
+//Erik
+Eigen::Vector3f KeyFrame::GetPosBias()
+{
+    unique_lock<mutex> lock(mMutexPose);
+    return Eigen::Vector3f(mPosb_x, mPosb_y, mPosb_z);
+}
+//E
 IMU::Bias KeyFrame::GetImuBias()
 {
     unique_lock<mutex> lock(mMutexPose);
@@ -1183,6 +1202,7 @@ void KeyFrame::setGNSS(){
     fGF = true;
     timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
     GNSS_deltaT = mTimeStamp - timeStampGNSS;
+    
 }
 
 

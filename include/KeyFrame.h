@@ -305,6 +305,7 @@ public:
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
     void IntegrateToGNSS();
     void setGNSS();
+    Eigen::Vector3f GetPosBias();
 
     //void SetTestVec(std::vector<float> tVec); // GNSS Martin
 
@@ -428,7 +429,7 @@ public:
     vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
     vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
     vector<double> tstepBetweenKFs; //GNSS Martin
-   
+     vector<double> mECEF;
 
     
     //Erik

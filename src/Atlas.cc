@@ -105,13 +105,9 @@ void Atlas::SetViewer(Viewer* pViewer)
 
 void Atlas::AddKeyFrame(KeyFrame* pKF)
 {
-        GNSSiter++; 
-
     Map* pMapKF = pKF->GetMap();
-
-
     pMapKF->AddKeyFrame(pKF);
-  
+
     
 }
 
