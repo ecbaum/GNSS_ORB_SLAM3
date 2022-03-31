@@ -844,56 +844,7 @@ public:
 
 
 // Erik
-class EdgePosBias : public g2o::BaseMultiEdge<3,Eigen::Vector3d>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    EdgePosBias();
 
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    void computeError();
-    Eigen::Vector3d mBias;
-};
-
-class VertexPosBias : public g2o::BaseVertex<3,Eigen::Vector3d>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    VertexPosBias(){}
-    VertexPosBias(KeyFrame* pKF);
-
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    virtual void setToOriginImpl() {
-        }
-
-    virtual void oplusImpl(const double* update_){
-        Eigen::Vector3d uba;
-        uba << update_[0], update_[1], update_[2];
-        setEstimate(estimate()+uba);
-    }
-};
-
-class EdgePosBias2 : public g2o::BaseBinaryEdge<3,Eigen::Vector3d,VertexPose,VertexPosBias>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgePosBias2(){}
-
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    void computeError(){
-        const VertexPose* VP1= static_cast<const VertexPose*>(_vertices[0]);
-        const VertexPosBias* VG2= static_cast<const VertexPosBias*>(_vertices[1]);
-        _error = VP1->estimate().twb.cwiseProduct(VG2->estimate()) - VP1->estimate().twb;
-    }
-
-};
 
 class EdgePosBias3 : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexPose>
 {
@@ -915,26 +866,45 @@ public:
 
 };
 
+class ECEFnode
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    ECEFnode(){
+        T = Eigen::Matrix4d::Identity();
+        mnId = 12000;
+    }
+    ECEFnode(Eigen::Matrix4d _T){
+        T = _T;
+        mnId = 12000;
+    }
+
+    Eigen::Matrix4d T;
+    int mnId;
+    
+};
+
 class VertexECEFframe : public g2o::BaseVertex<6,Eigen::Matrix4d>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    VertexECEFframe(){
-        setEstimate(Eigen::Matrix<double, 4, 4>::Identity(4,4));
+    VertexECEFframe(){}
+    VertexECEFframe(ECEFnode * pEN){
+        setEstimate(pEN->T);
     }
-
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
     virtual void setToOriginImpl() {
         }
-    /*
+    
     virtual void oplusImpl(const double* update_){
-        _estimate.Update(update_);
+        _estimate = _estimate;
         updateCache();
-    }*/
+    }
 };
+
 
 class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexECEFframe>
 {
@@ -957,6 +927,7 @@ public:
     }
 
 };
+
 
 
 //E
