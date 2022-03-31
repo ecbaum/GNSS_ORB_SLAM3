@@ -41,7 +41,7 @@
 
 #include "OptimizableTypes.h"
 
-
+bool test = false; 
 namespace ORB_SLAM3
 {
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
@@ -2601,7 +2601,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-
+     
+        /*  if(pKFi->fGF){
+                cout<<"Keyframe :"<< pKFi->mnId << "is a GNSS frame" << endl;
+            }
+        */
 
         if(!pKFi->mPrevKF)
         {
@@ -2663,6 +2667,15 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setInformation(InfoA);           
 
             optimizer.addEdge(vear[i]);
+            /*if(test){
+                cout << "Test finns, ämdrar till false"<< endl;
+                test = false;
+            }
+                    if(!test){
+                cout << "Test finns inte, ämdrar till true"<< endl;
+                test = true; 
+            }
+            */
          /*
             if(i == N-1){
                 cout << "N: " << N <<endl;

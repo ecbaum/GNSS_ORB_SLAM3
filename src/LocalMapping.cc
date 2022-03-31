@@ -1074,15 +1074,15 @@ void LocalMapping::RequestReset()
     cout << "LM: Map reset, Done!!!" << endl;
 }
 
-void LocalMapping::RequestResetActiveMap(Map* pMap)
+void LocalMapping::RequestResetActiveMap(Map* pMap)// ej i LS
 {
-    {
-        unique_lock<mutex> lock(mMutexReset);
-        cout << "LM: Active map reset recieved" << endl;
-        mbResetRequestedActiveMap = true;
-        mpMapToReset = pMap;
-    }
-    cout << "LM: Active map reset, waiting..." << endl;
+    {// ej i LS
+        unique_lock<mutex> lock(mMutexReset);// ej i LS
+        cout << "LM: Active map reset recieved" << endl;// ej i LS
+        mbResetRequestedActiveMap = true;// ej i LS
+        mpMapToReset = pMap;// ej i LS
+    }// ej i LS
+    cout << "LM: Active map reset, waiting..." << endl;// ej i LS
 
     while(1)
     {
@@ -1098,18 +1098,18 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)
 
 void LocalMapping::ResetIfRequested()
 {
-    bool executed_reset = false;
+    bool executed_reset = false;// ej i LS
     {
         unique_lock<mutex> lock(mMutexReset);
         if(mbResetRequested)
         {
-            executed_reset = true;
+            executed_reset = true;// ej i LS
 
             cout << "LM: Reseting Atlas in Local Mapping..." << endl;
             mlNewKeyFrames.clear();
             mlpRecentAddedMapPoints.clear();
             mbResetRequested = false;
-            mbResetRequestedActiveMap = false;
+            mbResetRequestedActiveMap = false;// ej i LS
 
             // Inertial parameters
             mTinit = 0.f;
@@ -1122,20 +1122,20 @@ void LocalMapping::ResetIfRequested()
             cout << "LM: End reseting Local Mapping..." << endl;
         }
 
-        if(mbResetRequestedActiveMap) {
-            executed_reset = true;
+        if(mbResetRequestedActiveMap) {// ej i LS
+            executed_reset = true;// ej i LS
             cout << "LM: Reseting current map in Local Mapping..." << endl;
-            mlNewKeyFrames.clear();
+            mlNewKeyFrames.clear();// ej i LS
             mlpRecentAddedMapPoints.clear();
-
+// ej i LS
             // Inertial parameters
             mTinit = 0.f;
-            mbNotBA2 = true;
+            mbNotBA2 = true;// ej i LS
             mbNotBA1 = true;
-            mbBadImu=false;
+            mbBadImu=false;// ej i LS
 
-            mbResetRequested = false;
-            mbResetRequestedActiveMap = false;
+            mbResetRequested = false;// ej i LS
+            mbResetRequestedActiveMap = false;// ej i LS
             cout << "LM: End reseting Local Mapping..." << endl;
         }
     }

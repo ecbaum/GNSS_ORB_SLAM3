@@ -45,15 +45,18 @@ Camera.height: 1536
 #Camera.width: 752
 #Camera.height: 480
 
-Camera.newWidth: 752
-Camera.newHeight: 564
+#Camera.newWidth: 752
+#Camera.newHeight: 564
+Camera.newWidth: 1000
+Camera.newHeight: 750
+
 
 # Camera frames per second 
 #Camera.fps: 20
 Camera.fps: 10
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
-Camera.RGB: 1
+Camera.RGB: 0
 
 # Transformation from camera to body-frame (imu)
 IMU.T_b_c1: !!opencv-matrix
@@ -72,25 +75,32 @@ IMU.GyroWalk: 1.9393e-05
 IMU.AccWalk: 3.0000e-03 # 3e-03
 IMU.Frequency: 100.0
 
+
+#IMU.NoiseGyro: 1.7e-10 #1.6968e-04
+#IMU.NoiseAcc: 2.0000e-10 #2.0e-3
+#IMU.GyroWalk: 1.9393e-10 
+#IMU.AccWalk: 3.0000e-10 # 3e-03
+#IMU.Frequency: 100.0
+
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1000 # 1000
+ORBextractor.nFeatures: 2000 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
-ORBextractor.scaleFactor: 1.2
+ORBextractor.scaleFactor: 1.2 #1.2
 
 # ORB Extractor: Number of levels in the scale pyramid	
-ORBextractor.nLevels: 8
+ORBextractor.nLevels: 8 #8
 
 # ORB Extractor: Fast threshold
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast			
-ORBextractor.iniThFAST: 20
-ORBextractor.minThFAST: 7
+ORBextractor.iniThFAST: 20 #20
+ORBextractor.minThFAST: 7 #7
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters

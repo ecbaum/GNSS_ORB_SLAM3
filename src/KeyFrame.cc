@@ -506,7 +506,7 @@ void KeyFrame::AddChild(KeyFrame *pKF)
 }
 
 void KeyFrame::EraseChild(KeyFrame *pKF)
-{
+{   
     unique_lock<mutex> lockCon(mMutexConnections);
     mspChildrens.erase(pKF);
 }
@@ -549,7 +549,7 @@ void KeyFrame::SetFirstConnection(bool bFirst)
 }
 
 void KeyFrame::AddLoopEdge(KeyFrame *pKF)
-{
+{   //Kanske något att kolla på här GNSS
     unique_lock<mutex> lockCon(mMutexConnections);
     mbNotErase = true;
     mspLoopEdges.insert(pKF);
@@ -1200,8 +1200,8 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 
 void KeyFrame::setGNSS(){
     fGF = true;
-    timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
-    GNSS_deltaT = mTimeStamp - timeStampGNSS;
+    //timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
+    //GNSS_deltaT = mTimeStamp - timeStampGNSS;
     
 }
 

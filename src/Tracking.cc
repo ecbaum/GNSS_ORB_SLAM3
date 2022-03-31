@@ -1814,7 +1814,7 @@ void Tracking::Track()
         mbStep = false;
     }
 
-    if(mpLocalMapper->mbBadImu)
+    if(mpLocalMapper->mbBadImu) //Sets IMU to bad and removes local map.
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
         mpSystem->ResetActiveMap();
@@ -2219,9 +2219,7 @@ void Tracking::Track()
         cout << "current: " << mCurrentFrame.mTimeStamp << endl; 
         }
        */
-        
    if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
-            cout << "Insert NEW SPP keyframe" << endl; 
             mCurrentFrame.convertToGNSS = true;
             mECEF.push_back(mCurrentFrame.mTimeStamp); 
             mECEF.push_back(GNSS_data[GNSS_counter][0]);
@@ -2275,17 +2273,28 @@ void Tracking::Track()
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
-#endif
-            bool bNeedKF = NeedNewKeyFrame();
-              if(mCurrentFrame.convertToGNSS){
-                CreateNewKeyFrame();
-            }else
-            {
-                if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+#endif          //GNSS Martin   
+                bool bNeedKF = NeedNewKeyFrame();
+                if(mCurrentFrame.convertToGNSS){
+                    cout << "Inserts keyframe with only GNSS in consideration" << endl;
+                    CreateNewKeyFrame(); 
+
+
+                }else if(bNeedKF && mCurrentFrame.convertToGNSS && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
                 (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
-                CreateNewKeyFrame(); 
-                }
-            }
+                
+                    CreateNewKeyFrame(); 
+                    cout << "Added GNSS Keyframe with all criterions"<< endl;
+
+                }else if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
+                
+                    CreateNewKeyFrame(); 
+                    cout << "Added Keyframe without GNSS "<< endl;
+                }   
+                   
+      
+
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
             //if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
@@ -3268,7 +3277,8 @@ void Tracking::CreateNewKeyFrame()
 
     if(mCurrentFrame.convertToGNSS){
         pKF->setGNSS();
-        cout << "GNSS keyframe inserted" << endl;
+        pKF->SetNotErase();
+        //cout << "GNSS keyframe inserted" << endl;
         pKF-> mECEF = mECEF; 
         mECEF.clear();  
     }
@@ -3296,10 +3306,6 @@ void Tracking::CreateNewKeyFrame()
         accBetweenKFs.clear();
         angVelBetweenKFs.clear();
         tstepBetweenKFs.clear();
-
-        if(mCurrentFrame.convertToGNSS){
-         
-        }
     
     if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
     {
@@ -3593,7 +3599,7 @@ void Tracking::UpdateLocalKeyFrames()
     // Include also some not-already-included keyframes that are neighbors to already-included keyframes
     for(vector<KeyFrame*>::const_iterator itKF=mvpLocalKeyFrames.begin(), itEndKF=mvpLocalKeyFrames.end(); itKF!=itEndKF; itKF++)
     {
-        // Limit the number of keyframes
+        // Limit the number of keyframes GNSS Martin
         if(mvpLocalKeyFrames.size()>80) // 80
             break;
 

@@ -309,12 +309,12 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false;
+            mbResetActiveMap = false; // ej i LS
         }
-        else if(mbResetActiveMap)
+        else if(mbResetActiveMap)// ej i LS
         {
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
+            mpTracker->ResetActiveMap();// ej i LS
+            mbResetActiveMap = false;// ej i LS
         }
     }
 
@@ -384,12 +384,12 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false;
+            mbResetActiveMap = false;// ej i LS
         }
-        else if(mbResetActiveMap)
+        else if(mbResetActiveMap)// ej i LS
         {
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
+            mpTracker->ResetActiveMap();// ej i LS
+            mbResetActiveMap = false;// ej i LS
         }
     }
 
@@ -458,14 +458,14 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
         if(mbReset)
         {
             mpTracker->Reset();
-            mbReset = false;
-            mbResetActiveMap = false;
+            mbReset = false;// ej i LS
+            mbResetActiveMap = false;// ej i LS
         }
-        else if(mbResetActiveMap)
+        else if(mbResetActiveMap)// ej i LS
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
-            mbResetActiveMap = false;
+            mpTracker->ResetActiveMap();// ej i LS
+            mbResetActiveMap = false;// ej i LS
         }
     }
 
@@ -516,11 +516,11 @@ void System::Reset()
     mbReset = true;
 }
 
-void System::ResetActiveMap()
-{
-    unique_lock<mutex> lock(mMutexReset);
-    mbResetActiveMap = true;
-}
+void System::ResetActiveMap()// ej i LS
+{// ej i LS
+    unique_lock<mutex> lock(mMutexReset);// ej i LS
+    mbResetActiveMap = true;// ej i LS
+}// ej i LS
 
 void System::Shutdown()
 {
