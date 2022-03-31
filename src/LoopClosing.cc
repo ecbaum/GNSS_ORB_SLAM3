@@ -33,7 +33,7 @@ namespace ORB_SLAM3
 {
 
 LoopClosing::LoopClosing(Atlas *pAtlas, KeyFrameDatabase *pDB, ORBVocabulary *pVoc, const bool bFixScale, const bool bActiveLC):
-    mbResetRequested(false), mbResetActiveMapRequested(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas),
+    mbResetRequested(false), mbFinishRequested(false), mbFinished(true), mpAtlas(pAtlas),
     mpKeyFrameDB(pDB), mpORBVocabulary(pVoc), mpMatchedKF(NULL), mLastLoopKFid(0), mbRunningGBA(false), mbFinishedGBA(true),
     mbStopGBA(false), mpThreadGBA(NULL), mbFixScale(bFixScale), mnFullBAIdx(0), mnLoopNumCoincidences(0), mnMergeNumCoincidences(0),
     mbLoopDetected(false), mbMergeDetected(false), mnLoopNumNotFound(0), mnMergeNumNotFound(0), mbActiveLC(bActiveLC)
@@ -2214,7 +2214,7 @@ void LoopClosing::RequestReset()
         usleep(5000);
     }
 }
-
+/*
 void LoopClosing::RequestResetActiveMap(Map *pMap)
 {
     {
@@ -2233,7 +2233,7 @@ void LoopClosing::RequestResetActiveMap(Map *pMap)
         usleep(3000);
     }
 }
-
+*/
 void LoopClosing::ResetIfRequested()
 {
     unique_lock<mutex> lock(mMutexReset);
@@ -2243,8 +2243,9 @@ void LoopClosing::ResetIfRequested()
         mlpLoopKeyFrameQueue.clear();
         mLastLoopKFid=0;  //TODO old variable, it is not use in the new algorithm
         mbResetRequested=false;
-        mbResetActiveMapRequested = false;
+       // mbResetActiveMapRequested = false;
     }
+    /*
     else if(mbResetActiveMapRequested)
     {
 
@@ -2263,6 +2264,7 @@ void LoopClosing::ResetIfRequested()
         mbResetActiveMapRequested=false;
 
     }
+    */
 }
 
 void LoopClosing::RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoopKF)

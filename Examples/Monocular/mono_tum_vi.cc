@@ -185,7 +185,7 @@ int main(int argc, char **argv)
         {
             cout << "Changing the dataset" << endl;
 
-            SLAM.ChangeDataset();
+            //SLAM.ChangeDataset();
         }
 
     }

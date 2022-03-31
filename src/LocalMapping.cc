@@ -1073,7 +1073,7 @@ void LocalMapping::RequestReset()
     }
     cout << "LM: Map reset, Done!!!" << endl;
 }
-
+/*
 void LocalMapping::RequestResetActiveMap(Map* pMap)// ej i LS
 {
     {// ej i LS
@@ -1095,7 +1095,7 @@ void LocalMapping::RequestResetActiveMap(Map* pMap)// ej i LS
     }
     cout << "LM: Active map reset, Done!!!" << endl;
 }
-
+*/
 void LocalMapping::ResetIfRequested()
 {
     bool executed_reset = false;// ej i LS

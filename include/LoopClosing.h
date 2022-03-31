@@ -64,7 +64,7 @@ public:
     void InsertKeyFrame(KeyFrame *pKF);
 
     void RequestReset();
-    void RequestResetActiveMap(Map* pMap);
+    //void RequestResetActiveMap(Map* pMap);
 
     // This function will run in a separate thread
     void RunGlobalBundleAdjustment(Map* pActiveMap, unsigned long nLoopKF);
@@ -146,7 +146,7 @@ protected:
 
     void ResetIfRequested();
     bool mbResetRequested;
-    bool mbResetActiveMapRequested;
+   // bool mbResetActiveMapRequested;
     Map* mpMapToReset;
     std::mutex mMutexReset;
 

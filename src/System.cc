@@ -46,7 +46,7 @@ Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence):
-    mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false), mbResetActiveMap(false),
+    mSensor(sensor), mpViewer(static_cast<Viewer*>(NULL)), mbReset(false),
     mbActivateLocalizationMode(false), mbDeactivateLocalizationMode(false), mbShutDown(false)
 {
     // Output welcome message
@@ -309,13 +309,14 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false; // ej i LS
-        }
+          //mbResetActiveMap = false; // ej i LS
+        } /* 
         else if(mbResetActiveMap)// ej i LS
         {
             mpTracker->ResetActiveMap();// ej i LS
             mbResetActiveMap = false;// ej i LS
         }
+        */
     }
 
     if (mSensor == System::IMU_STEREO)
@@ -384,13 +385,15 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         {
             mpTracker->Reset();
             mbReset = false;
-            mbResetActiveMap = false;// ej i LS
+         //mbResetActiveMap = false;// ej i LS
         }
+        /*
         else if(mbResetActiveMap)// ej i LS
         {
             mpTracker->ResetActiveMap();// ej i LS
             mbResetActiveMap = false;// ej i LS
         }
+        */
     }
 
     if (mSensor == System::IMU_RGBD)
@@ -458,15 +461,16 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
         if(mbReset)
         {
             mpTracker->Reset();
-            mbReset = false;// ej i LS
-            mbResetActiveMap = false;// ej i LS
-        }
+            mbReset = false;
+          //mbResetActiveMap = false;// ej i LS
+        } /* 
         else if(mbResetActiveMap)// ej i LS
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
             mpTracker->ResetActiveMap();// ej i LS
             mbResetActiveMap = false;// ej i LS
         }
+        */
     }
 
     if (mSensor == System::IMU_MONOCULAR)
@@ -515,13 +519,13 @@ void System::Reset()
     unique_lock<mutex> lock(mMutexReset);
     mbReset = true;
 }
-
+/*
 void System::ResetActiveMap()// ej i LS
 {// ej i LS
     unique_lock<mutex> lock(mMutexReset);// ej i LS
     mbResetActiveMap = true;// ej i LS
 }// ej i LS
-
+*/
 void System::Shutdown()
 {
     {
@@ -1373,7 +1377,7 @@ bool System::isFinished()
 {
     return (GetTimeFromIMUInit()>0.1);
 }
-
+/*
 void System::ChangeDataset()
 {
     if(mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
@@ -1387,6 +1391,7 @@ void System::ChangeDataset()
 
     mpTracker->NewDataset();
 }
+*/
 
 float System::GetImageScale()
 {

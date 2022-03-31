@@ -161,7 +161,7 @@ public:
     bool mbOnlyTracking;
 
     void Reset(bool bLocMap = false);
-    void ResetActiveMap(bool bLocMap = false);
+    //void ResetActiveMap(bool bLocMap = false);
 
     float mMeanTrack;
     bool mbInitWith3KFs;

@@ -1813,14 +1813,14 @@ void Tracking::Track()
             usleep(500);
         mbStep = false;
     }
-
+    /*
     if(mpLocalMapper->mbBadImu) //Sets IMU to bad and removes local map.
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
         mpSystem->ResetActiveMap();
         return;
     }
-
+*/
     Map* pCurrentMap = mpAtlas->GetCurrentMap();
     if(!pCurrentMap)
     {
@@ -1837,6 +1837,7 @@ void Tracking::Track()
             CreateMapInAtlas();
             return;
         }
+        /*
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
         {
             // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
@@ -1863,8 +1864,8 @@ void Tracking::Track()
                 }
                 return;
             }
-
-        }
+            
+        }*/
     }
 
 
@@ -2023,6 +2024,7 @@ void Tracking::Track()
                         }
                     }
                 }
+                /*
                 else if (mState == LOST)
                 {
 
@@ -2041,7 +2043,7 @@ void Tracking::Track()
                     Verbose::PrintMess("done", Verbose::VERBOSITY_NORMAL);
 
                     return;
-                }
+                }*/
             }
 
         }
@@ -2158,12 +2160,13 @@ void Tracking::Track()
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
             {
                 Verbose::PrintMess("Track lost for less than one second...", Verbose::VERBOSITY_NORMAL);
+                /*
                 if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
                     mpSystem->ResetActiveMap();
                 }
-
+                */
                 mState=RECENTLY_LOST;
             }
             else
@@ -2275,25 +2278,25 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif          //GNSS Martin   
                 bool bNeedKF = NeedNewKeyFrame();
-                if(mCurrentFrame.convertToGNSS){
-                    cout << "Inserts keyframe with only GNSS in consideration" << endl;
-                    CreateNewKeyFrame(); 
-
-
-                }else if(bNeedKF && mCurrentFrame.convertToGNSS && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                if(bNeedKF && mCurrentFrame.convertToGNSS && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
                 (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
                 
                     CreateNewKeyFrame(); 
                     cout << "Added GNSS Keyframe with all criterions"<< endl;
+                }
 
-                }else if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                else if(mCurrentFrame.convertToGNSS){
+                    cout << "Inserts keyframe with only GNSS in consideration" << endl;
+                    CreateNewKeyFrame(); 
+                }
+                
+                else if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
                 (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
                 
                     CreateNewKeyFrame(); 
                     cout << "Added Keyframe without GNSS "<< endl;
                 }   
                    
-      
 
             // Check if we need to insert a new keyframe
             // if(bNeedKF && bOK)
@@ -2324,14 +2327,14 @@ void Tracking::Track()
         {
             if(pCurrentMap->KeyFramesInMap()<=10)
             {
-                mpSystem->ResetActiveMap();
+                //mpSystem->ResetActiveMap();
                 return;
             }
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 if (!pCurrentMap->isImuInitialized())
                 {
                     Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                    mpSystem->ResetActiveMap();
+                    //mpSystem->ResetActiveMap();
                     return;
                 }
 
@@ -2640,7 +2643,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
-        mpSystem->ResetActiveMap();
+        //mpSystem->ResetActiveMap();
         return;
     }
 
@@ -3904,7 +3907,7 @@ void Tracking::Reset(bool bLocMap)
 
     Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
-
+/*
 void Tracking::ResetActiveMap(bool bLocMap)
 {
     Verbose::PrintMess("Active map Reseting", Verbose::VERBOSITY_NORMAL);
@@ -3995,7 +3998,7 @@ void Tracking::ResetActiveMap(bool bLocMap)
 
     Verbose::PrintMess("   End reseting! ", Verbose::VERBOSITY_NORMAL);
 }
-
+*/
 vector<MapPoint*> Tracking::GetLocalMapMPS()
 {
     return mvpLocalMapPoints;
