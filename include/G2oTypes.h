@@ -929,7 +929,6 @@ public:
 };
 
 
-
 //E
 
 } //namespace ORB_SLAM2

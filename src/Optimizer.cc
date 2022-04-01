@@ -2527,15 +2527,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         optimizer.setAlgorithm(solver);
     }
     //Erik
-    /*VE_test1
+    /*ve_test1
     VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
     V_ECEF->setId(ECEFnode_->mnId);
     optimizer.addVertex(V_ECEF);
     */
-    
-    /**/
-
-
     // Set Local temporal KeyFrame vertices
     N=vpOptimizableKFs.size();
     for(int i=0; i<N; i++)
@@ -2668,6 +2664,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3,3>(12,12).cast<double>().inverse();
             vear[i]->setInformation(InfoA);           
             if(i == 0){
+                EdgePosBias3* edgePos = new EdgePosBias3();
+                
                 /* VE_test2
 
                 EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
@@ -2977,7 +2975,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
     //static_cast<const VertexPose*>(VP2)->estimate()
     //g2o::BaseVertex::VertexECEFframe* VEL = optimizer.vertex(ECEFnode_->mnId);
-    ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer.vertex(ECEFnode_->mnId))->estimate();
+    //ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer.vertex(ECEFnode_->mnId))->estimate();
 
     // Local visual KeyFrame
     for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
@@ -2999,6 +2997,57 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     pMap->IncreaseChangeIndex();
+    //ve_test4
+    // Setup optimizer
+    g2o::SparseOptimizer optimizer;
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+
+    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+
+    if(bLarge)
+    {
+        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+        solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
+        optimizer.setAlgorithm(solver);
+    }
+    else
+    {
+        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+        solver->setUserLambdaInit(1e0);
+        optimizer.setAlgorithm(solver);
+    }
+
+    //Add vertex
+    VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
+    V_ECEF->setId(ECEFnode_->mnId);
+    optimizer.addVertex(V_ECEF);
+    //Connect edges
+    for(int i=0;i<N;i++)
+    {
+        KeyFrame* pKFi = vpOptimizableKFs[i];
+        if(pKFi->fGF){
+            g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
+            EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
+            Eigen::Vector3d v(1.05,1.05,1.05);
+            e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb;
+            e_ECEFLocal->poseECEF = static_cast<const VertexPose*>(VP)->estimate().twb + v; //Detta ska senare vara GNSS-mätning
+            e_ECEFLocal->setVertex(0,optimizer.vertex(ECEFnode_->mnId));
+            optimizer.addEdge(e_ECEFLocal);
+        }
+    }    
+    //Optimize
+    optimizer.initializeOptimization();
+    optimizer.computeActiveErrors();
+    float err = optimizer.activeRobustChi2();
+    optimizer.optimize(opt_it); // Originally to 2
+    float err_end = optimizer.activeRobustChi2();
+    if(pbStopFlag)
+        optimizer.setForceStopFlag(pbStopFlag);
+
+    //Save optimized value
+    ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer.vertex(ECEFnode_->mnId))->estimate();
+
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)
