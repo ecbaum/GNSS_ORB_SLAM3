@@ -2999,54 +2999,50 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     pMap->IncreaseChangeIndex();
     //ve_test4
     // Setup optimizer
-    g2o::SparseOptimizer optimizer;
-    g2o::BlockSolverX::LinearSolverType * linearSolver;
-    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
-
-    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+    g2o::SparseOptimizer optimizer2;
 
     if(bLarge)
     {
         g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
         solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
-        optimizer.setAlgorithm(solver);
+        optimizer2.setAlgorithm(solver);
     }
     else
     {
         g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
         solver->setUserLambdaInit(1e0);
-        optimizer.setAlgorithm(solver);
+        optimizer2.setAlgorithm(solver);
     }
 
     //Add vertex
     VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
     V_ECEF->setId(ECEFnode_->mnId);
-    optimizer.addVertex(V_ECEF);
+    optimizer2.addVertex(V_ECEF);
     //Connect edges
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
         if(pKFi->fGF){
-            g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
+            g2o::HyperGraph::Vertex* VP = optimizer2.vertex(pKFi->mnId);
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
             e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb;
             e_ECEFLocal->poseECEF = static_cast<const VertexPose*>(VP)->estimate().twb + v; //Detta ska senare vara GNSS-mätning
-            e_ECEFLocal->setVertex(0,optimizer.vertex(ECEFnode_->mnId));
-            optimizer.addEdge(e_ECEFLocal);
+            e_ECEFLocal->setVertex(0,optimizer2.vertex(ECEFnode_->mnId));
+            optimizer2.addEdge(e_ECEFLocal);
         }
     }    
     //Optimize
-    optimizer.initializeOptimization();
-    optimizer.computeActiveErrors();
-    float err = optimizer.activeRobustChi2();
-    optimizer.optimize(opt_it); // Originally to 2
-    float err_end = optimizer.activeRobustChi2();
+    optimizer2.initializeOptimization();
+    optimizer2.computeActiveErrors();
+    float err2 = optimizer2.activeRobustChi2();
+    optimizer2.optimize(opt_it); // Originally to 2
+    float err_end2 = optimizer2.activeRobustChi2();
     if(pbStopFlag)
-        optimizer.setForceStopFlag(pbStopFlag);
+        optimizer2.setForceStopFlag(pbStopFlag);
 
     //Save optimized value
-    ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer.vertex(ECEFnode_->mnId))->estimate();
+    ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer2.vertex(ECEFnode_->mnId))->estimate();
 
 }
 
