@@ -900,7 +900,24 @@ public:
         }
     
     virtual void oplusImpl(const double* update_){
-        _estimate = _estimate;
+        Eigen::Matrix4d uba;
+        
+        for(int i = 0; i < 4; i++){
+            for(int j = 0; j < 4; j++){
+                uba(i,j) = update_[i*4+j];
+
+            }
+        }
+        /*
+        cout << "  UPDATE  " << endl;
+              for(int k=0; k <16; k++){
+     
+                    cout<< "  " << update_[k];
+             
+            }
+    
+ */
+        setEstimate(estimate()-uba);
         updateCache();
     }
 };
@@ -918,15 +935,26 @@ public:
 
     Eigen::Vector3d posPose, poseECEF;
 
-    const VertexECEFframe* TF = static_cast<const VertexECEFframe*>(_vertices[0]);
-    Eigen::Matrix3d R = TF->estimate().block<3,3>(0,0);
-    Eigen::Vector3d T = TF->estimate().block<1,3>(0,3);
+  
 
     void computeError(){
-        _error = R*poseECEF + T - posPose;
+        
+          const VertexECEFframe* TF = static_cast<const VertexECEFframe*>(_vertices[0]);
+        Eigen::Matrix3d R = TF->estimate().block<3,3>(0,0);
+        Eigen::Vector3d T = TF->estimate().block<1,3>(0,3);
+        _error << R*poseECEF + T - posPose;
+        
+         cout << "  ERROR  "; 
+              for(int k=0; k <3; k++){
+     
+                    cout<< "  " << _error(k);
+             
+                cout << endl; 
+            }
+        
     }
 
-};
+};  
 
 
 //E

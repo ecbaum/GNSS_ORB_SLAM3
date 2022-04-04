@@ -2386,6 +2386,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
+    cout << ":::::::::::starting optimizer" << endl;
     Map* pCurrentMap = pKF->GetMap();
 
     int maxOpt=10;
@@ -2997,52 +2998,75 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     pMap->IncreaseChangeIndex();
-    //ve_test4
+    //Erik_test4
     // Setup optimizer
     g2o::SparseOptimizer optimizer2;
+     
+
+    g2o::BlockSolverX::LinearSolverType * linearSolver2;
+    linearSolver2 = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX * solver_ptr2 = new g2o::BlockSolverX(linearSolver2);
+
 
     if(bLarge)
     {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr2);
         solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
         optimizer2.setAlgorithm(solver);
     }
     else
     {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr2);
         solver->setUserLambdaInit(1e0);
         optimizer2.setAlgorithm(solver);
     }
+   
+
 
     //Add vertex
     VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
+
+
     V_ECEF->setId(ECEFnode_->mnId);
-    optimizer2.addVertex(V_ECEF);
+
+        optimizer2.addVertex(V_ECEF);
     //Connect edges
+
     for(int i=0;i<N;i++)
+    
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
         if(pKFi->fGF){
-            g2o::HyperGraph::Vertex* VP = optimizer2.vertex(pKFi->mnId);
+           // g2o::HyperGraph::Vertex* VP = optimizer2.vertex(pKFi->mnId);
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
-            e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb;
-            e_ECEFLocal->poseECEF = static_cast<const VertexPose*>(VP)->estimate().twb + v; //Detta ska senare vara GNSS-mätning
+            //if(e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb);
+            e_ECEFLocal->posPose = pKFi->GetPose().translation().cast<double>();
+            e_ECEFLocal->poseECEF = pKFi->GetPose().translation().cast<double>() + v; //Detta ska senare vara GNSS-mätning
             e_ECEFLocal->setVertex(0,optimizer2.vertex(ECEFnode_->mnId));
             optimizer2.addEdge(e_ECEFLocal);
+    
         }
     }    
-    //Optimize
+    //Optimize 
+   
     optimizer2.initializeOptimization();
+
     optimizer2.computeActiveErrors();
     float err2 = optimizer2.activeRobustChi2();
     optimizer2.optimize(opt_it); // Originally to 2
     float err_end2 = optimizer2.activeRobustChi2();
-    if(pbStopFlag)
-        optimizer2.setForceStopFlag(pbStopFlag);
 
-    //Save optimized value
     ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer2.vertex(ECEFnode_->mnId))->estimate();
+   /* for(int k=0; k <4; k++){
+            for(int h=0; h < 4; h++){
+                cout << "    " << static_cast<VertexECEFframe*>(optimizer2.vertex(ECEFnode_->mnId))->estimate()(k,h); 
+    }
+     cout << endl; 
+    }
+        cout << ":::::::::::SAVED" << endl;
+
+    */
 
 }
 
