@@ -871,19 +871,31 @@ class ECEFnode
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     ECEFnode(){
-        T = Eigen::Matrix4d::Identity();
+        
+        
+        Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
+        Eigen::Vector3d * t_ = new Eigen::Vector3d();
+
+        r_->setIdentity();
+        t_->setZero();
+
+        g2o::SE3Quat * _T = new g2o::SE3Quat();
+
+        _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
+        _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
+
         mnId = 12000;
     }
-    ECEFnode(Eigen::Matrix4d _T){
+    ECEFnode(g2o::SE3Quat _T){
         T = _T;
         mnId = 12000;
     }
 
-    Eigen::Matrix4d T;
+    g2o::SE3Quat T;
     int mnId;
     
 };
-
+/*
 class VertexECEFframe : public g2o::BaseVertex<6,Eigen::Matrix4d>
 {
 public:
@@ -899,31 +911,24 @@ public:
     virtual void setToOriginImpl() {
         }
     
-    virtual void oplusImpl(const double* update_){
-        Eigen::Matrix4d uba;
-        
-        for(int i = 0; i < 4; i++){
-            for(int j = 0; j < 4; j++){
-                uba(i,j) = update_[i*4+j];
 
-            }
-        }
-        /*
-        cout << "  UPDATE  " << endl;
-              for(int k=0; k <16; k++){
-     
-                    cout<< "  " << update_[k];
-             
-            }
-    
- */
         setEstimate(estimate()-uba);
         updateCache();
     }
 };
+*/
 
+/*
 
-class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexECEFframe>
+g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
+Sophus::SE3<float> Tcw = pKF->GetPose();
+vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),Tcw.translation().cast<double>()));
+VertexSBAPointXYZ* vi = static_cast<VertexSBAPointXYZ*>(_vertices[0]);
+Vector3d xyz = vi->estimate();
+Vector3d xyz_trans = T.map(xyz);
+*/
+
+class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -933,25 +938,20 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
-    Eigen::Vector3d posPose, poseECEF;
 
+    Eigen::Vector3d t_GKF, t_ECEF; //Translation for GKF pose and ECEF respectively 
   
 
     void computeError(){
         
-          const VertexECEFframe* TF = static_cast<const VertexECEFframe*>(_vertices[0]);
-        Eigen::Matrix3d R = TF->estimate().block<3,3>(0,0);
-        Eigen::Vector3d T = TF->estimate().block<1,3>(0,3);
-        _error << R*poseECEF + T - posPose;
-        
-         cout << "  ERROR  "; 
-              for(int k=0; k <3; k++){
-     
-                    cout<< "  " << _error(k);
-             
-                cout << endl; 
-            }
-        
+        const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
+        _error << TF->estimate().map(t_ECEF) - t_GKF;
+
+        cout << "  ERROR:  " << endl; 
+        for(int k=0; k <3; k++){
+            cout<< "  " << _error(k) << "   ";
+        }
+        cout << endl;
     }
 
 };  

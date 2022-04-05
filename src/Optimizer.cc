@@ -45,7 +45,7 @@
 namespace ORB_SLAM3
 {
 //Erik
-ECEFnode * ECEFnode_ = new ECEFnode(Eigen::Matrix4d::Identity());
+ECEFnode * node_ECEF = new ECEFnode();
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
 {
     return (a.second < b.second);
@@ -2528,11 +2528,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         optimizer.setAlgorithm(solver);
     }
     //Erik
-    /*ve_test1
-    VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
-    V_ECEF->setId(ECEFnode_->mnId);
-    optimizer.addVertex(V_ECEF);
-    */
+
     // Set Local temporal KeyFrame vertices
     N=vpOptimizableKFs.size();
     for(int i=0; i<N; i++)
@@ -2664,20 +2660,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setVertex(1,VA2);
             Eigen::Matrix3d InfoA = pKFi->mpImuPreintegrated->C.block<3,3>(12,12).cast<double>().inverse();
             vear[i]->setInformation(InfoA);           
-            if(i == 0){
-                EdgePosBias3* edgePos = new EdgePosBias3();
-                
-                /* VE_test2
 
-                EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
-                Eigen::Vector3d v(1.05,1.05,1.05);
-                e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP2)->estimate().twb;
-                e_ECEFLocal->poseECEF = static_cast<const VertexPose*>(VP2)->estimate().twb + v; //Detta ska senare vara GNSS-mätning
-
-                e_ECEFLocal->setVertex(0,optimizer.vertex(ECEFnode_->mnId));
-                optimizer.addEdge(e_ECEFLocal);        
-                */       
-            }
             optimizer.addEdge(vear[i]);
         }
         else
@@ -2859,21 +2842,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         assert(mit->second>=3);
     }
 
-/* VE_test3
-    for(int i=0;i<N;i++)
-    {
-        KeyFrame* pKFi = vpOptimizableKFs[i];
-        if(pKFi->fGF){
-            g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
-            EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
-            Eigen::Vector3d v(1.05,1.05,1.05);
-            e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb;
-            e_ECEFLocal->poseECEF = static_cast<const VertexPose*>(VP)->estimate().twb + v; //Detta ska senare vara GNSS-mätning
-            e_ECEFLocal->setVertex(0,optimizer.vertex(ECEFnode_->mnId));
-            optimizer.addEdge(e_ECEFLocal);
-        }
-    }
-*/
 
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
@@ -2975,8 +2943,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //Erik
     //g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
     //static_cast<const VertexPose*>(VP2)->estimate()
-    //g2o::BaseVertex::VertexECEFframe* VEL = optimizer.vertex(ECEFnode_->mnId);
-    //ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer.vertex(ECEFnode_->mnId))->estimate();
+    //g2o::BaseVertex::VertexECEFframe* VEL = optimizer.vertex(node_ECEF->mnId);
+    //node_ECEF->T = static_cast<VertexECEFframe*>(optimizer.vertex(node_ECEF->mnId))->estimate();
 
     // Local visual KeyFrame
     for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
@@ -3024,12 +2992,12 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 
     //Add vertex
-    VertexECEFframe * V_ECEF = new VertexECEFframe(ECEFnode_);
+    g2o::VertexSE3Expmap * v_ECEFTransform = new g2o::VertexSE3Expmap();
+    v_ECEFTransform->setEstimate(node_ECEF->T); 
+ 
+    v_ECEFTransform->setId(node_ECEF->mnId);
 
-
-    V_ECEF->setId(ECEFnode_->mnId);
-
-        optimizer2.addVertex(V_ECEF);
+        optimizer2.addVertex(v_ECEFTransform);
     //Connect edges
 
     for(int i=0;i<N;i++)
@@ -3041,9 +3009,9 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
             //if(e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb);
-            e_ECEFLocal->posPose = pKFi->GetPose().translation().cast<double>();
-            e_ECEFLocal->poseECEF = pKFi->GetPose().translation().cast<double>() + v; //Detta ska senare vara GNSS-mätning
-            e_ECEFLocal->setVertex(0,optimizer2.vertex(ECEFnode_->mnId));
+            e_ECEFLocal->t_GKF = pKFi->GetPose().translation().cast<double>();
+            e_ECEFLocal->t_ECEF = pKFi->GetPose().translation().cast<double>() + v; //Detta ska senare vara GNSS-mätning
+            e_ECEFLocal->setVertex(0,optimizer2.vertex(node_ECEF->mnId));
             optimizer2.addEdge(e_ECEFLocal);
     
         }
@@ -3057,10 +3025,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     optimizer2.optimize(opt_it); // Originally to 2
     float err_end2 = optimizer2.activeRobustChi2();
 
-    ECEFnode_->T = static_cast<VertexECEFframe*>(optimizer2.vertex(ECEFnode_->mnId))->estimate();
+    node_ECEF->T = static_cast<g2o::VertexSE3Expmap*>(optimizer2.vertex(node_ECEF->mnId))->estimate();
    /* for(int k=0; k <4; k++){
             for(int h=0; h < 4; h++){
-                cout << "    " << static_cast<VertexECEFframe*>(optimizer2.vertex(ECEFnode_->mnId))->estimate()(k,h); 
+                cout << "    " << static_cast<VertexECEFframe*>(optimizer2.vertex(node_ECEF->mnId))->estimate()(k,h); 
     }
      cout << endl; 
     }
