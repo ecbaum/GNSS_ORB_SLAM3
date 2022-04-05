@@ -2969,7 +2969,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //Erik_test4
     // Setup optimizer
     g2o::SparseOptimizer optimizer2;
-     
+    optimizer2.setVerbose(true);
 
     g2o::BlockSolverX::LinearSolverType * linearSolver2;
     linearSolver2 = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
@@ -2988,8 +2988,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         solver->setUserLambdaInit(1e0);
         optimizer2.setAlgorithm(solver);
     }
-   
+/*
+    g2o::OptimizationAlgorithmGaussNewton* solver2 = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr2);
 
+    optimizer2.setAlgorithm(solver2);
+*/
 
     //Add vertex
     g2o::VertexSE3Expmap * v_ECEFTransform = new g2o::VertexSE3Expmap();
@@ -3008,9 +3011,20 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
            // g2o::HyperGraph::Vertex* VP = optimizer2.vertex(pKFi->mnId);
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
+            
+            g2o::SE3Quat *  _T = new g2o::SE3Quat();
+
+            Eigen::Quaterniond * r_ = new Eigen::Quaterniond(0.69,0.05,0.70,-0.16);
+            Eigen::Vector3d * t_ = new Eigen::Vector3d(1.05,1.05,1.05);
+
+            _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
+            _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
+
+
+
             //if(e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb);
             e_ECEFLocal->t_GKF = pKFi->GetPose().translation().cast<double>();
-            e_ECEFLocal->t_ECEF = pKFi->GetPose().translation().cast<double>() + v; //Detta ska senare vara GNSS-mätning
+            e_ECEFLocal->t_ECEF = _T->map(pKFi->GetPose().translation().cast<double>()); //Detta ska senare vara GNSS-mätning
             e_ECEFLocal->setVertex(0,optimizer2.vertex(node_ECEF->mnId));
             optimizer2.addEdge(e_ECEFLocal);
     
@@ -3022,7 +3036,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     optimizer2.computeActiveErrors();
     float err2 = optimizer2.activeRobustChi2();
-    optimizer2.optimize(opt_it); // Originally to 2
+    optimizer2.optimize(20); // Originally to 2
     float err_end2 = optimizer2.activeRobustChi2();
 
     node_ECEF->T = static_cast<g2o::VertexSE3Expmap*>(optimizer2.vertex(node_ECEF->mnId))->estimate();
@@ -3035,6 +3049,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         cout << ":::::::::::SAVED" << endl;
 
     */
+
+   cout<<"   Transform:  " << node_ECEF->T << endl;
 
 }
 

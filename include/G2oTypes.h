@@ -933,7 +933,11 @@ class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexS
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeECEFToLocal(){}
+    EdgeECEFToLocal(){
+
+        Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
+        setInformation(Info);
+    }
 
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
