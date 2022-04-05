@@ -44,6 +44,7 @@ LocalMapping::LocalMapping(System* pSys, Atlas *pAtlas, const float bMonocular, 
     mNumLM = 0;
     mNumKFCulling=0;
 
+
 #ifdef REGISTER_TIMES
     nLBA_exec = 0;
     nLBA_abort = 0;
@@ -148,6 +149,7 @@ void LocalMapping::Run()
                         bool bLarge = ((mpTracker->GetMatchesInliers()>75)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
                         Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, bLarge, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
                         b_doneLBA = true;
+                        Optimizer::InitalizeGNSS(mpCurrentKeyFrame, node_ECEF);
                     }
                     else
                     {

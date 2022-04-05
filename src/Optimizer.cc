@@ -45,7 +45,7 @@
 namespace ORB_SLAM3
 {
 //Erik
-ECEFnode * node_ECEF = new ECEFnode();
+//ECEFnode * node_ECEF = new ECEFnode();
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
 {
     return (a.second < b.second);
@@ -2527,7 +2527,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         solver->setUserLambdaInit(1e0);
         optimizer.setAlgorithm(solver);
     }
-    //Erik
+
 
     // Set Local temporal KeyFrame vertices
     N=vpOptimizableKFs.size();
@@ -2940,12 +2940,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
         }
     }
-    //Erik
-    //g2o::HyperGraph::Vertex* VP2 = optimizer.vertex(pKFi->mnId);
-    //static_cast<const VertexPose*>(VP2)->estimate()
-    //g2o::BaseVertex::VertexECEFframe* VEL = optimizer.vertex(node_ECEF->mnId);
-    //node_ECEF->T = static_cast<VertexECEFframe*>(optimizer.vertex(node_ECEF->mnId))->estimate();
-
     // Local visual KeyFrame
     for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
     {
@@ -2966,91 +2960,99 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     pMap->IncreaseChangeIndex();
-    //Erik_test4
-    // Setup optimizer
-    g2o::SparseOptimizer optimizer2;
-    optimizer2.setVerbose(true);
 
-    g2o::BlockSolverX::LinearSolverType * linearSolver2;
-    linearSolver2 = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
-    g2o::BlockSolverX * solver_ptr2 = new g2o::BlockSolverX(linearSolver2);
+}
 
+void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
+    // Collect keyframes into chain
+    Map* pCurrentMap = pKF->GetMap();
 
-    if(bLarge)
+    int maxOpt=10;
+
+    const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
+    const unsigned long maxKFid = pKF->mnId;
+
+    vector<KeyFrame*> vpOptimizableKFs;
+    const vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
+    list<KeyFrame*> lpOptVisKFs;
+
+    vpOptimizableKFs.reserve(Nd);
+    vpOptimizableKFs.push_back(pKF);
+    pKF->mnBALocalForKF = pKF->mnId;
+    for(int i=1; i<Nd; i++)
     {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr2);
-        solver->setUserLambdaInit(1e-2); // to avoid iterating for finding optimal lambda
-        optimizer2.setAlgorithm(solver);
+        if(vpOptimizableKFs.back()->mPrevKF)
+        {
+            vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
+            vpOptimizableKFs.back()->mnBALocalForKF = pKF->mnId;
+        }
+        else
+            break;
     }
-    else
-    {
-        g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr2);
-        solver->setUserLambdaInit(1e0);
-        optimizer2.setAlgorithm(solver);
-    }
-/*
-    g2o::OptimizationAlgorithmGaussNewton* solver2 = new g2o::OptimizationAlgorithmGaussNewton(solver_ptr2);
 
-    optimizer2.setAlgorithm(solver2);
-*/
+    int N = vpOptimizableKFs.size();
 
-    //Add vertex
+    // Set up optimizer
+    g2o::SparseOptimizer optimizer;
+    optimizer.setVerbose(true);
+
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    solver->setUserLambdaInit(1e0);
+    optimizer.setAlgorithm(solver);
+
+    // Add SE3 transform vertex
     g2o::VertexSE3Expmap * v_ECEFTransform = new g2o::VertexSE3Expmap();
     v_ECEFTransform->setEstimate(node_ECEF->T); 
- 
     v_ECEFTransform->setId(node_ECEF->mnId);
+    optimizer.addVertex(v_ECEFTransform);
 
-        optimizer2.addVertex(v_ECEFTransform);
-    //Connect edges
-
-    for(int i=0;i<N;i++)
     
+
+    // _T is a test transformation
+    g2o::SE3Quat *  _T = new g2o::SE3Quat();
+
+    Eigen::Quaterniond * r_ = new Eigen::Quaterniond(0.69,0.05,0.70,-0.16);
+    Eigen::Vector3d * t_ = new Eigen::Vector3d(1.05,1.05,1.05);
+
+    _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
+    _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
+
+
+
+    //Connect edges
+    for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-        if(pKFi->fGF){
-           // g2o::HyperGraph::Vertex* VP = optimizer2.vertex(pKFi->mnId);
+        if(pKFi->fGF){ //If GNSS Keyframes
+
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
-            
-            g2o::SE3Quat *  _T = new g2o::SE3Quat();
 
-            Eigen::Quaterniond * r_ = new Eigen::Quaterniond(0.69,0.05,0.70,-0.16);
-            Eigen::Vector3d * t_ = new Eigen::Vector3d(1.05,1.05,1.05);
-
-            _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
-            _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
-
-
-
-            //if(e_ECEFLocal->posPose = static_cast<const VertexPose*>(VP)->estimate().twb);
             e_ECEFLocal->t_GKF = pKFi->GetPose().translation().cast<double>();
-            e_ECEFLocal->t_ECEF = _T->map(pKFi->GetPose().translation().cast<double>()); //Detta ska senare vara GNSS-mätning
-            e_ECEFLocal->setVertex(0,optimizer2.vertex(node_ECEF->mnId));
-            optimizer2.addEdge(e_ECEFLocal);
+            // Apply test transformation
+            // Later use SPP GNSS position
+            e_ECEFLocal->t_ECEF = _T->map(pKFi->GetPose().translation().cast<double>());
+            e_ECEFLocal->setVertex(0,optimizer.vertex(node_ECEF->mnId));
+            optimizer.addEdge(e_ECEFLocal);
     
         }
     }    
     //Optimize 
    
-    optimizer2.initializeOptimization();
+    optimizer.initializeOptimization();
+    optimizer.computeActiveErrors();
+    float err2 = optimizer.activeRobustChi2();
+    optimizer.optimize(10); 
+    float err_end2 = optimizer.activeRobustChi2();
 
-    optimizer2.computeActiveErrors();
-    float err2 = optimizer2.activeRobustChi2();
-    optimizer2.optimize(20); // Originally to 2
-    float err_end2 = optimizer2.activeRobustChi2();
+    //Save optimized variable
+    node_ECEF->T = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(node_ECEF->mnId))->estimate();
 
-    node_ECEF->T = static_cast<g2o::VertexSE3Expmap*>(optimizer2.vertex(node_ECEF->mnId))->estimate();
-   /* for(int k=0; k <4; k++){
-            for(int h=0; h < 4; h++){
-                cout << "    " << static_cast<VertexECEFframe*>(optimizer2.vertex(node_ECEF->mnId))->estimate()(k,h); 
-    }
-     cout << endl; 
-    }
-        cout << ":::::::::::SAVED" << endl;
-
-    */
-
-   cout<<"   Transform:  " << node_ECEF->T << endl;
+    //cout<<"   Transform:  " << node_ECEF->T << endl;
 
 }
 
