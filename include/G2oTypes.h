@@ -845,27 +845,6 @@ public:
 
 // Erik
 
-
-class EdgePosBias3 : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,VertexPose>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
-    EdgePosBias3(){}
-
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    Eigen::Vector3d mBias;
-    void computeError(){
-        const VertexPose* VPose = static_cast<const VertexPose*>(_vertices[0]);
-        const Eigen::Vector3d er = VPose->estimate().twb.cwiseProduct(mBias) - VPose->estimate().twb;
-
-        _error = er;
-    }
-
-};
-
 class ECEFnode
 {
 public:
@@ -895,38 +874,7 @@ public:
     int mnId;
     
 };
-/*
-class VertexECEFframe : public g2o::BaseVertex<6,Eigen::Matrix4d>
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    VertexECEFframe(){}
-    VertexECEFframe(ECEFnode * pEN){
-        setEstimate(pEN->T);
-    }
 
-    virtual bool read(std::istream& is){return false;}
-    virtual bool write(std::ostream& os) const{return false;}
-
-    virtual void setToOriginImpl() {
-        }
-    
-
-        setEstimate(estimate()-uba);
-        updateCache();
-    }
-};
-*/
-
-/*
-
-g2o::VertexSE3Expmap * vSE3 = new g2o::VertexSE3Expmap();
-Sophus::SE3<float> Tcw = pKF->GetPose();
-vSE3->setEstimate(g2o::SE3Quat(Tcw.unit_quaternion().cast<double>(),Tcw.translation().cast<double>()));
-VertexSBAPointXYZ* vi = static_cast<VertexSBAPointXYZ*>(_vertices[0]);
-Vector3d xyz = vi->estimate();
-Vector3d xyz_trans = T.map(xyz);
-*/
 
 class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
 {
@@ -951,12 +899,93 @@ public:
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << TF->estimate().map(t_ECEF) - t_GKF;
 
-        cout << "  ERROR:  " << endl; 
+        /*cout << "  ERROR:  " << endl; 
         for(int k=0; k <3; k++){
             cout<< "  " << _error(k) << "   ";
         }
-        cout << endl;
+        cout << endl;*/
     }
+    /* Description of procedure in paper
+
+    Notation:
+
+        R^B_A         - Rotation matrix that takes vector in frame {A} to frame {B}
+        p^B_A         - Coordinates of the origin of {A} from perpective of {B}
+
+        (R^B_A)^T = R^A_B
+
+        {WE}          - Earth coordinate frame, Earth-fixed coordinate system (ECEF)
+        {WG}          - Ground coordinate frame, local tangent plane, ENU (east, north, up)
+        {WL}          - Local frame for SLAM
+        {g}           - GNSS reciever frame
+
+    Description of specific transformations:
+
+        p^{WE}_{ref}  - GNSS SPP point, reference point for ground (ENU) in {WE} (ECEF)
+        p^{WE}_{WG}   - Coordinate of the origin of {WG} (ENU) from perspective of {WG} 
+        R^{WE}_{WG}   - Rotation matrix that takes vector in ENU to ECEF
+        p^{WE}_{g}    - Coordinates of the origin of GNSS reciever from perpective of ECEF, result of SPP
+        p^{WG}_{g}    - Coordinates of the origin of GNSS reciever from perpective of ENU
+
+    
+    Equations for transformations:
+
+        Geodetic (lat, long, alt) to ECEF (X, Y, Z) coordinates:
+
+            X = (N(phi) + h) * cos(phi) * cos(lambda)
+            Y = (N(phi) + h) * cos(phi) * sin(lambda)
+            Z = (b^2 / a^2 * N(phi) + h) * sin(phi)
+
+            N(phi) = a^2 / sqrt(1 - e^2 * sin^2(phi))
+            e^2 = 1 - b^2/a^2
+
+            a = 6378137.0000 m    (WGS-84 ellipsoid, semi-major axis)
+            b = 6356752.3142 m    (WGS-84 ellipsoid, semi-minor axis)
+        
+            phi    - latitude
+            lambda - longitude
+            h      - altitude / height
+
+
+        p^{WE}_{WG} = p^{WE}_{ref}      p^{WE}_{WG} is chosen as the GNSS SPP point
+
+    
+                                        | - sin(lambda)               cos(lambda)                0     |
+        (R^{WE}_{WG})^T = R^{WG}_{WE} = | - sin(phi) * cos(lambda)  - sin(phi) * sin(lambda)  cos(phi) |
+                                        | - cos(phi) * cos(lambda)    cos(phi) * sin(lambda)  sin(phi) |
+            
+
+        p^{WG}_{g} = (R^{WE}_{WG})^T * (p^{WE}_{g} - p^{WE}_{WG})
+                   =  R^{WG}_{WE} * (p^{WE}_{g} - p^{WE}_{WG})      
+                   
+                                        (R^{WE}_{WG})^T can be expressed as R^{WG}_{WE}
+                                        p^{WE}_{g} - p^{WE}_{WG} is the relative vector from {g} to {WE}
+                                        R^{WG}_{WE} rotates this vector to {WG} coordinate frame
+        
+
+        Two sets of positions:
+            {P^{WG}_{g_l} | l = 0 ... L-1}
+            {p^{WL}_{g_l} | l = 0 ... L-1}
+
+            position of g at time instant l expressed in coordinate frame {WG} from SPP and {WL} from SLAM system
+
+
+        Minimization problem for finding R^{WG}_{WL} and p^{WG}_{WL}:
+
+
+                  min              sum^{L-1}_{l=0} || P^{WG}_{g_l} - s * R^{WG}_{WL} * p^{WL}_{g_l} - p^{WG}_{WL} ||^2
+        s, R^{WG}_{WL}, p^{WG}_{WL}
+
+                
+                p^{WG}_{WL}                   This centers the ENU and local SLAM coordinate systems 
+
+                s * R^{WG}_{WL} * p^{WL}_{g_l}    Rotates and scales the local receiever position to align with 
+                                                  the SPP position expressed in ENU, P^{WG}_{g_l}
+
+                                                  Unclear whether scaling is necessary. 
+                                                  g2o::VertexSE3Expmap does not support scaling and modifications 
+                                                  might be needed if scaling is critical
+    */
 
 };  
 
