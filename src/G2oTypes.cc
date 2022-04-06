@@ -859,8 +859,50 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
     W << 0.0, -w[2], w[1],w[2], 0.0, -w[0],-w[1],  w[0], 0.0;
     return W;
 }
+//Erik
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates){
+
+    double a, b, e2, phi, lambda, h, N_phi, x, y, z;
+
+    a = 6378137.0000; // m (WGS-84 ellipsoid, semi-major axis)
+    b = 6356752.3142; // m (WGS-84 ellipsoid, semi-minor axis)
+    e2 = 1 - pow(b, 2) / pow(a, 2) ; 
+
+    phi    = geodeticCoordinates[0];
+    lambda = geodeticCoordinates[1];
+    h      = geodeticCoordinates[2];
+
+    N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
+
+    x = (N_phi + h) * cos(phi) * cos(lambda);
+    y = (N_phi + h) * cos(phi) * sin(lambda);
+    z = (pow(b, 2) / pow(a, 2) * N_phi + h) * sin(phi);
+
+    Eigen::Vector3d * p_WE_gl = new Eigen::Vector3d(x, y, z);
+    return *p_WE_gl; 
+}
 
 
+Eigen::Vector3d ECEFToENU(Eigen::Vector3d &geodeticCoordinates, Eigen::Vector3d &p_WE_WG, Eigen::Vector3d &p_WE_gl){
 
+    Eigen::Matrix3d R_WG_WE;
+    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
+
+    phi    = geodeticCoordinates[0];
+    lambda = geodeticCoordinates[1];
+
+    R11 = - sin(lambda);            R12 =   cos(lambda);            R13 = 0;
+    R21 = - sin(phi) * cos(lambda); R22 = - sin(phi) * sin(lambda); R23 = cos(phi);
+    R31 = - cos(phi) * cos(lambda); R32 =   cos(phi) * sin(lambda); R33 = sin(phi);
+
+    R_WG_WE.row(0) << R11, R12, R13;
+    R_WG_WE.row(1) << R21, R22, R23;
+    R_WG_WE.row(2) << R31, R32, R33;
+
+    Eigen::Vector3d p_WG_gl = R_WG_WE * (p_WE_gl - p_WE_WG); 
+    return p_WG_gl;
+}
+//E
 
 }
+ 

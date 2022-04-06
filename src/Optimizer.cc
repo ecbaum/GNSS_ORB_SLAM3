@@ -3032,10 +3032,10 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
             EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
             Eigen::Vector3d v(1.05,1.05,1.05);
 
-            e_ECEFLocal->t_GKF = pKFi->GetPose().translation().cast<double>();
+            e_ECEFLocal->p_WL_gl = pKFi->GetPose().translation().cast<double>();
             // Apply test transformation
             // Later use SPP GNSS position
-            e_ECEFLocal->t_ECEF = _T->map(pKFi->GetPose().translation().cast<double>());
+            e_ECEFLocal->p_WG_gl = _T->map(pKFi->GetPose().translation().cast<double>());
             e_ECEFLocal->setVertex(0,optimizer.vertex(node_ECEF->mnId));
             optimizer.addEdge(e_ECEFLocal);
     

@@ -891,13 +891,18 @@ public:
     virtual bool write(std::ostream& os) const{return false;}
 
 
-    Eigen::Vector3d t_GKF, t_ECEF; //Translation for GKF pose and ECEF respectively 
+    Eigen::Vector3d geodeticCoordinates, p_WE_WG, p_WG_gl, p_WL_gl;
+    // p_WE_WG           - Coordinate of the origin of {WG} (ENU) from perspective of {WG}
+    // p_WG_gl, p_WL_gl  - position of GNSS reciever at time instant l expressed in 
+    //                     coordinate frame {WG} from SPP and {WL} from SLAM system
   
+    Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates);
+    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &geodeticCoordinates, Eigen::Vector3d &p_WE_WG, Eigen::Vector3d &p_WE_gl);
 
     void computeError(){
         
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
-        _error << TF->estimate().map(t_ECEF) - t_GKF;
+        _error << p_WG_gl - TF->estimate().map(p_WL_gl);
 
         /*cout << "  ERROR:  " << endl; 
         for(int k=0; k <3; k++){
@@ -936,7 +941,7 @@ public:
             Y = (N(phi) + h) * cos(phi) * sin(lambda)
             Z = (b^2 / a^2 * N(phi) + h) * sin(phi)
 
-            N(phi) = a^2 / sqrt(1 - e^2 * sin^2(phi))
+            N(phi) = a / sqrt(1 - e^2 * sin^2(phi))
             e^2 = 1 - b^2/a^2
 
             a = 6378137.0000 m    (WGS-84 ellipsoid, semi-major axis)
