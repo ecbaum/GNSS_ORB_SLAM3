@@ -875,6 +875,63 @@ public:
     
 };
 
+struct SatelliteData{
+    int satId;                      // Unique satellite identifier
+    double pr;                      // Psuedorange measurement
+    double prCov;                   // Covariance of psuedorange measurement
+    double p_WE;                    // Satellite position in {WE} frame
+    double sClockBiasPrior;         // Prior estimate of satellite clock bias 
+    /*
+    Discuss:
+        sClockBias node
+        covariance
+        random walk model
+    */
+};
+
+struct EpochData{
+    double epochTime;               // Moment of time of epoch 
+    double gKFTime;                 // Moment of time of corresponding GNSS KeyFrame
+    KeyFrame * gKF;                 // Pointer to GNSS KeyFrame
+    vector<SatelliteData> satData;  // Vector of satellite data
+    double rClockBiasPrior;         // Prior estimate of reciever clock bias w.r.t. satellite constellation
+};
+
+class GNSSFramework
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    GNSSFramework(){}
+
+    void initECEFtoENU();
+
+    void setECEFtoENU(g2o::SE3Quat _T){T_WE_WG = &_T;}
+    g2o::SE3Quat getECEFtoENU(){return *T_WE_WG;}
+
+
+    bool bECEFtoENU = false;
+    g2o::SE3Quat * T_WE_WG;
+    vector<EpochData> epData;
+
+    int mnId = 10000;  
+    int idSp = 100;
+    /* ID convention for GNSS vertices
+
+    mnId: root ID for GNSS vertices
+    idSp: spacing in IDs between epochs
+
+        vertex ID of ECEFtoENU: 
+            mnId
+        epochId of epoch i: 
+            mnId + 1 + idSp*i
+        vertex ID of rClockBiasPrior of epoch i: 
+            epochId
+        vertex ID of sClockBiasPrior j of epoch i: 
+            epochId + 1 + j
+    */
+};
+
+
 
 class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
 {
@@ -890,25 +947,36 @@ public:
     virtual bool read(std::istream& is){return false;}
     virtual bool write(std::ostream& os) const{return false;}
 
+    
+    Eigen::Vector3d geodeticCoordinates;   // SPP positioning measurement in geodetic coordinates;
+    Eigen::Vector3d p_WE_WG;               // Coordinate of the origin of {WG} (ENU) from perspective of {WG}
 
-    Eigen::Vector3d geodeticCoordinates, p_WE_WG, p_WG_gl, p_WL_gl;
-    // p_WE_WG           - Coordinate of the origin of {WG} (ENU) from perspective of {WG}
-    // p_WG_gl, p_WL_gl  - position of GNSS reciever at time instant l expressed in 
-    //                     coordinate frame {WG} from SPP and {WL} from SLAM system
-  
-    Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates);
-    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &geodeticCoordinates, Eigen::Vector3d &p_WE_WG, Eigen::Vector3d &p_WE_gl);
+                                           // gl: Position of GNSS reciever at time instant l
+    Eigen::Vector3d p_WE_gl;               // gl expressed in {WE}, ECEF from SPP
+    Eigen::Vector3d p_WG_gl;               // gl expressed in {WG}, ENU
+    Eigen::Vector3d p_WL_gl;               // gl expressed in {WL}, SLAM frame
+
+    void setLocalPose(KeyFrame *gKF){p_WL_gl = gKF->GetPose().translation().cast<double>();};
+
+    void ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
 
     void computeError(){
-        
+        /*
+        TODO:
+            Proceedure for initialization: 
+                1. Start initalization
+                2. Choose a reference point p_WE_WG
+                3. Run optimization until convergence on N different SPP positions 
+
+            p_WG_gl = GeodeticToECEF(*geodeticCoordinates);
+            p_WG_gl = ECEFToENU(*p_WE_gl);
+
+        Discuss:
+            Scaling parameter
+        */ 
+
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << p_WG_gl - TF->estimate().map(p_WL_gl);
-
-        /*cout << "  ERROR:  " << endl; 
-        for(int k=0; k <3; k++){
-            cout<< "  " << _error(k) << "   ";
-        }
-        cout << endl;*/
     }
     /* Description of procedure in paper
 
@@ -981,7 +1049,7 @@ public:
                   min              sum^{L-1}_{l=0} || P^{WG}_{g_l} - s * R^{WG}_{WL} * p^{WL}_{g_l} - p^{WG}_{WL} ||^2
         s, R^{WG}_{WL}, p^{WG}_{WL}
 
-                
+
                 p^{WG}_{WL}                   This centers the ENU and local SLAM coordinate systems 
 
                 s * R^{WG}_{WL} * p^{WL}_{g_l}    Rotates and scales the local receiever position to align with 
@@ -994,6 +1062,59 @@ public:
 
 };  
 
+class EdgePsuedorange : public g2o::BaseMultiEdge<1,double>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgePsuedorange(){
+        /*Discuss:
+            Express uncertainty in all variable
+            amount of leverage for adjusting variables in optimization depends on the estimate of their covariance
+        */
+        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
+        setInformation(Info);
+    }
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+
+    double c = 299792458;         // m/s
+
+    // Measurements
+
+    double dT;                    // Time between moment of epoch m(e) and moment of exposure, k
+    IMU::Preintegrated pIntGNSS;  // Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
+    Eigen::Vector3d P_WE_Sie;     // Coordinate of satellite i at m(e) in {WE} frame    
+    Eigen::Vector3d p_WL_ge;      // Position of GNSS reciever at m(e) expressed in {WL} from SLAM system   ?????? 
+    double pr;                    // Psuedorange measurement
+
+    // Transformation parameters 
+
+    Eigen::Vector3d p_WE_WG;      // Coordinate of the origin of {WG} (ENU) from perspective of {WG} (ECEF)
+    Eigen::Matrix3d R_WE_WG;      // Rotation matrix to {WG} (ENU) from perspective of {WG} (ECEF)
+    Eigen::Vector3d p_b_g;        // Translational component of IMU-GNSS receiver extrinsic parameter
+
+    // Parameter from vertices
+
+    double dt_r_ji_e;              // Reciever clock bias w.r.t GNSS constellation j(i)at epoch e
+    double dt_s_i_e;               // Satellite clock bias of satellite i at epoch e
+    g2o::VertexSE3Expmap T_WG_WL;  // Transformation of between ground (ENU) and local (SLAM)
+
+    /*TODO:
+        Write vertice classes for dt_r_ji_e, dt_s_i_e
+        Connect all vertices in this edge
+
+        write methods:
+            relativePoseCalculation() - from preintegration factor to pose
+            setMeasurements()         - Get data from epoch and measurements from satelite of satIdx
+            computeError()
+    */
+    void relativePoseCalculation(IMU::Preintegrated *pIntGNSS){};
+    void setMeasurements(EpochData *epData, int satIdx){};
+    void computeError(){}
+};
 
 //E
 

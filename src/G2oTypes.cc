@@ -859,7 +859,44 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
     W << 0.0, -w[2], w[1],w[2], 0.0, -w[0],-w[1],  w[0], 0.0;
     return W;
 }
+
 //Erik
+
+//Methods
+
+void GNSSFramework::initECEFtoENU(){
+    Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
+    Eigen::Vector3d * t_ = new Eigen::Vector3d();
+
+    r_->setIdentity();
+    t_->setZero();
+
+    T_WE_WG->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
+    T_WE_WG->setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
+    bECEFtoENU = true; 
+}
+
+void EdgeECEFToLocal::ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates){
+
+    Eigen::Matrix3d R_WG_WE;
+    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
+
+    phi    = geodeticCoordinates[0];
+    lambda = geodeticCoordinates[1];
+
+    R11 = -sin(lambda);          R12 =  cos(lambda);          R13 = 0;
+    R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
+    R31 = -cos(phi)*cos(lambda); R32 =  cos(phi)*sin(lambda); R33 = sin(phi);
+
+    R_WG_WE.row(0) << R11, R12, R13;
+    R_WG_WE.row(1) << R21, R22, R23;
+    R_WG_WE.row(2) << R31, R32, R33;
+
+    p_WG_gl = R_WG_WE * (p_WE_gl - p_WE_WG); 
+}
+
+//Functions
+
 Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates){
 
     double a, b, e2, phi, lambda, h, N_phi, x, y, z;
@@ -882,26 +919,6 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates){
     return *p_WE_gl; 
 }
 
-
-Eigen::Vector3d ECEFToENU(Eigen::Vector3d &geodeticCoordinates, Eigen::Vector3d &p_WE_WG, Eigen::Vector3d &p_WE_gl){
-
-    Eigen::Matrix3d R_WG_WE;
-    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
-
-    phi    = geodeticCoordinates[0];
-    lambda = geodeticCoordinates[1];
-
-    R11 = - sin(lambda);            R12 =   cos(lambda);            R13 = 0;
-    R21 = - sin(phi) * cos(lambda); R22 = - sin(phi) * sin(lambda); R23 = cos(phi);
-    R31 = - cos(phi) * cos(lambda); R32 =   cos(phi) * sin(lambda); R33 = sin(phi);
-
-    R_WG_WE.row(0) << R11, R12, R13;
-    R_WG_WE.row(1) << R21, R22, R23;
-    R_WG_WE.row(2) << R31, R32, R33;
-
-    Eigen::Vector3d p_WG_gl = R_WG_WE * (p_WE_gl - p_WE_WG); 
-    return p_WG_gl;
-}
 //E
 
 }
