@@ -845,35 +845,7 @@ public:
 
 // Erik
 
-class ECEFnode
-{
-public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    ECEFnode(){
-        
-        
-        Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
-        Eigen::Vector3d * t_ = new Eigen::Vector3d();
-
-        r_->setIdentity();
-        t_->setZero();
-
-        g2o::SE3Quat * _T = new g2o::SE3Quat();
-
-        _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
-        _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
-
-        mnId = 12000;
-    }
-    ECEFnode(g2o::SE3Quat _T){
-        T = _T;
-        mnId = 12000;
-    }
-
-    g2o::SE3Quat T;
-    int mnId;
-    
-};
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates);
 
 struct SatelliteData{
     int satId;                      // Unique satellite identifier
@@ -901,17 +873,27 @@ class GNSSFramework
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    GNSSFramework(){}
+    GNSSFramework(){
+        initOptThreshold = 3;
+        KeyFrameThreshold = 3;
+        bInitalized = false;
+    }
 
-    void initECEFtoENU();
+    void setupInitialization(KeyFrame * cKF);
+    bool checkInitialization(int N_KF, KeyFrame * cKF);
+    void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
+    g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
 
-    void setECEFtoENU(g2o::SE3Quat _T){T_WE_WG = &_T;}
-    g2o::SE3Quat getECEFtoENU(){return *T_WE_WG;}
-
-
-    bool bECEFtoENU = false;
-    g2o::SE3Quat * T_WE_WG;
     vector<EpochData> epData;
+
+    // Initialization
+    int initOptCounter;         // # of optimizations performed
+    int initOptThreshold;       // # of optimizations until initalization stopped
+    int KeyFrameThreshold;      // # of keyframes in map required to begin optimization
+    int refKFId;                // Id of reference keyframe
+    Eigen::Vector3d p_WE_WG;    // Reference point for initalization
+    g2o::SE3Quat T_WG_WL;       // Transformation from ground to local
+    bool bInitalized;
 
     int mnId = 10000;  
     int idSp = 100;
@@ -920,7 +902,7 @@ public:
     mnId: root ID for GNSS vertices
     idSp: spacing in IDs between epochs
 
-        vertex ID of ECEFtoENU: 
+        vertex ID of T_WG_WL: 
             mnId
         epochId of epoch i: 
             mnId + 1 + idSp*i
@@ -933,12 +915,13 @@ public:
 
 
 
-class EdgeECEFToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
+class EdgeSPPToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgeECEFToLocal(){
+    EdgeSPPToLocal(GNSSFramework * mGNSSFramework){
+        p_WE_WG = mGNSSFramework->p_WE_WG;
 
         Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
         setInformation(Info);
@@ -949,31 +932,20 @@ public:
 
     
     Eigen::Vector3d geodeticCoordinates;   // SPP positioning measurement in geodetic coordinates;
-    Eigen::Vector3d p_WE_WG;               // Coordinate of the origin of {WG} (ENU) from perspective of {WG}
-
-                                           // gl: Position of GNSS reciever at time instant l
+    Eigen::Vector3d p_WE_WG;               // Coordinate of the origin of {WG} (ENU) from perspective of {WG}, reference
+                                           // gl - Position of GNSS reciever at time instant l
     Eigen::Vector3d p_WE_gl;               // gl expressed in {WE}, ECEF from SPP
-    Eigen::Vector3d p_WG_gl;               // gl expressed in {WG}, ENU
     Eigen::Vector3d p_WL_gl;               // gl expressed in {WL}, SLAM frame
 
-    void setLocalPose(KeyFrame *gKF){p_WL_gl = gKF->GetPose().translation().cast<double>();};
+    Eigen::Vector3d p_WG_gl;               // gl expressed in {WG}, ENU, calculated from p_WE_gl and p_WE_WG
 
-    void ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
+    void setLocalPosition(KeyFrame *gKF){p_WL_gl = gKF->GetPose().translation().cast<double>();};
+    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
 
     void computeError(){
-        /*
-        TODO:
-            Proceedure for initialization: 
-                1. Start initalization
-                2. Choose a reference point p_WE_WG
-                3. Run optimization until convergence on N different SPP positions 
 
-            p_WG_gl = GeodeticToECEF(*geodeticCoordinates);
-            p_WG_gl = ECEFToENU(*p_WE_gl);
-
-        Discuss:
-            Scaling parameter
-        */ 
+        p_WE_gl = GeodeticToECEF(geodeticCoordinates);         // From Geodetic to reciever to ECEF to reciever
+        p_WG_gl = ECEFToENU(p_WE_gl, geodeticCoordinates);     // From ECEF to reciever to ENU to reciever
 
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << p_WG_gl - TF->estimate().map(p_WL_gl);
@@ -1068,10 +1040,6 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     EdgePsuedorange(){
-        /*Discuss:
-            Express uncertainty in all variable
-            amount of leverage for adjusting variables in optimization depends on the estimate of their covariance
-        */
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
         setInformation(Info);
     }
@@ -1111,10 +1079,13 @@ public:
             setMeasurements()         - Get data from epoch and measurements from satelite of satIdx
             computeError()
     */
+
     void relativePoseCalculation(IMU::Preintegrated *pIntGNSS){};
     void setMeasurements(EpochData *epData, int satIdx){};
     void computeError(){}
 };
+
+
 
 //E
 

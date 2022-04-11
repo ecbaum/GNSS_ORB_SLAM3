@@ -192,7 +192,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     
     string pathGNSS = "../data/MH_01_easy/mav0/GNSS.csv";
-    ECEFnode * node_ECEF = new ECEFnode(); 
+
+    GNSSFramework * mGNSSFramework = new GNSSFramework();
 
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
@@ -204,7 +205,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-    mpLocalMapper->node_ECEF = node_ECEF;
+
+    mpLocalMapper->mGNSSFramework = mGNSSFramework;
+
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = initFr;
     if(settings_)

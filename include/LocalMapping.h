@@ -105,7 +105,7 @@ public:
     bool mbNotBA1;
     bool mbNotBA2;
     bool mbBadImu;
-    ECEFnode * node_ECEF;
+    GNSSFramework * mGNSSFramework;
     bool mbWriteStats;
 
     // not consider far points (clouds)

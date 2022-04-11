@@ -45,7 +45,7 @@
 namespace ORB_SLAM3
 {
 //Erik
-//ECEFnode * node_ECEF = new ECEFnode();
+
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
 {
     return (a.second < b.second);
@@ -2963,7 +2963,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
 }
 
-void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
+void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     // Collect keyframes into chain
     Map* pCurrentMap = pKF->GetMap();
 
@@ -2992,6 +2992,8 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
 
     int N = vpOptimizableKFs.size();
 
+    if(!mGNSSFramework->checkInitialization(N, pKF)){return;} // Check if initialization has to run
+
     // Set up optimizer
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(true);
@@ -3005,39 +3007,28 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
     optimizer.setAlgorithm(solver);
 
     // Add SE3 transform vertex
-    g2o::VertexSE3Expmap * v_ECEFTransform = new g2o::VertexSE3Expmap();
-    v_ECEFTransform->setEstimate(node_ECEF->T); 
-    v_ECEFTransform->setId(node_ECEF->mnId);
-    optimizer.addVertex(v_ECEFTransform);
-
-    
-
-    // _T is a test transformation
-    g2o::SE3Quat *  _T = new g2o::SE3Quat();
-
-    Eigen::Quaterniond * r_ = new Eigen::Quaterniond(0.69,0.05,0.70,-0.16);
-    Eigen::Vector3d * t_ = new Eigen::Vector3d(1.05,1.05,1.05);
-
-    _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
-    _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
+    g2o::VertexSE3Expmap * v_T_WG_WL = new g2o::VertexSE3Expmap(); // Vertice: transformation ground to local
 
 
+    v_T_WG_WL->setEstimate(mGNSSFramework->T_WG_WL); 
+    v_T_WG_WL->setId(mGNSSFramework->mnId);
+
+    optimizer.addVertex(v_T_WG_WL);
 
     //Connect edges
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-        if(pKFi->fGF){ //If GNSS Keyframes
+        if(pKFi->fGF && pKFi->mnId != mGNSSFramework->refKFId){ //If GNSS Keyframes and not reference frame for ECEF to ground
 
-            EdgeECEFToLocal * e_ECEFLocal = new EdgeECEFToLocal();
-            Eigen::Vector3d v(1.05,1.05,1.05);
-
-            e_ECEFLocal->p_WL_gl = pKFi->GetPose().translation().cast<double>();
-            // Apply test transformation
-            // Later use SPP GNSS position
-            e_ECEFLocal->p_WG_gl = _T->map(pKFi->GetPose().translation().cast<double>());
-            e_ECEFLocal->setVertex(0,optimizer.vertex(node_ECEF->mnId));
-            optimizer.addEdge(e_ECEFLocal);
+            EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal(mGNSSFramework); // Edge: ground to local
+        
+            e_WG_WL->setLocalPosition(pKFi);
+            /* TODO:
+            e_ECEFLocal->p_WE_gl = pKFi->GetSPP().cast<double>(); or e_WG_WL->setGNSSPos(pKFi);
+            */
+            e_WG_WL->setVertex(0, optimizer.vertex(mGNSSFramework->mnId));
+            optimizer.addEdge(e_WG_WL);
     
         }
     }    
@@ -3050,9 +3041,9 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, ECEFnode * node_ECEF){
     float err_end2 = optimizer.activeRobustChi2();
 
     //Save optimized variable
-    node_ECEF->T = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(node_ECEF->mnId))->estimate();
+    mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
 
-    //cout<<"   Transform:  " << node_ECEF->T << endl;
+    //cout<<"   Transform:  " << mGNSSFramework->T_WG_WL << endl;
 
 }
 
