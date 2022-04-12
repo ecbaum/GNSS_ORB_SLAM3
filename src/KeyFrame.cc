@@ -107,7 +107,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
     z_GNSS_ecef;
     */
   
-    mECEF;
+    SPP_geodetic;
     
     //GNSS Martin
     //Erik
