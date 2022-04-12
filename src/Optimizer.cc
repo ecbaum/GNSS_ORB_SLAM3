@@ -41,7 +41,7 @@
 
 #include "OptimizableTypes.h"
 
-
+bool test = false; 
 namespace ORB_SLAM3
 {
 //Erik
@@ -2601,6 +2601,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
+     
+        /*  if(pKFi->fGF){
+                cout<<"Keyframe :"<< pKFi->mnId << "is a GNSS frame" << endl;
+            }
+        */
 
         if(!pKFi->mPrevKF)
         {
@@ -2662,6 +2667,33 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setInformation(InfoA);           
 
             optimizer.addEdge(vear[i]);
+            /*if(test){
+                cout << "Test finns, ämdrar till false"<< endl;
+                test = false;
+            }
+                    if(!test){
+                cout << "Test finns inte, ämdrar till true"<< endl;
+                test = true; 
+            }
+            */
+         /*
+            if(i == N-1){
+                cout << "N: " << N <<endl;
+                cout << "1: " << endl;
+                EdgePosBias* edgePos = new EdgePosBias();
+                cout << "2: " << endl;
+                Eigen::Vector3d v(1.05,1.05,1.05);
+                cout << "3: " << endl;
+                edgePos->mBias = v;
+                cout << "4: " << endl;
+        
+        
+               // edgePos->setVertex(0,VP2);  
+                cout << "5: " << endl;
+                //optimizer.addEdge(edgePos);
+                cout << "6: " << endl;
+            }
+            */
         }
         else
             cout << "ERROR building inertial edge" << endl;

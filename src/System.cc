@@ -190,8 +190,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-    
-    string pathGNSS = "../data/MH_01_easy/mav0/GNSS.csv";
+    // Give path to GNSS file to be read. 
+    string pathGNSS = "../data/MH_01_easy/mav0/SPPGPS.csv";
 
     GNSSFramework * mGNSSFramework = new GNSSFramework();
 
