@@ -26,6 +26,7 @@
 #include "Tracking.h"
 #include "KeyFrameDatabase.h"
 #include "Settings.h"
+#include "G2oTypes.h"
 
 #include <mutex>
 
@@ -104,13 +105,14 @@ public:
     bool mbNotBA1;
     bool mbNotBA2;
     bool mbBadImu;
-
+    GNSSFramework * mGNSSFramework;
     bool mbWriteStats;
 
     // not consider far points (clouds)
     bool mbFarPoints;
     float mThFarPoints;
 
+    
 #ifdef REGISTER_TIMES
     vector<double> vdKFInsert_ms;
     vector<double> vdMPCulling_ms;

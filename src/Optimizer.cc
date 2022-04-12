@@ -44,6 +44,8 @@
 bool test = false; 
 namespace ORB_SLAM3
 {
+//Erik
+
 bool sortByVal(const pair<MapPoint*, int> &a, const pair<MapPoint*, int> &b)
 {
     return (a.second < b.second);
@@ -2384,6 +2386,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
+    cout << ":::::::::::starting optimizer" << endl;
     Map* pCurrentMap = pKF->GetMap();
 
     int maxOpt=10;
@@ -2589,10 +2592,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             optimizer.addVertex(VA);
         }
     }
-    //Erik
-    // EdgePosBias
 
-    //E
     // Create intertial constraints
     vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
     vector<EdgeGyroRW*> vegr(N,(EdgeGyroRW*)NULL);
@@ -2874,6 +2874,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         assert(mit->second>=3);
     }
 
+
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float err = optimizer.activeRobustChi2();
@@ -2971,7 +2972,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
         }
     }
-
     // Local visual KeyFrame
     for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
     {
@@ -2992,6 +2992,91 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
 
     pMap->IncreaseChangeIndex();
+
+}
+
+void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
+    // Collect keyframes into chain
+    Map* pCurrentMap = pKF->GetMap();
+
+    int maxOpt=10;
+
+    const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
+    const unsigned long maxKFid = pKF->mnId;
+
+    vector<KeyFrame*> vpOptimizableKFs;
+    const vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
+    list<KeyFrame*> lpOptVisKFs;
+
+    vpOptimizableKFs.reserve(Nd);
+    vpOptimizableKFs.push_back(pKF);
+    pKF->mnBALocalForKF = pKF->mnId;
+    for(int i=1; i<Nd; i++)
+    {
+        if(vpOptimizableKFs.back()->mPrevKF)
+        {
+            vpOptimizableKFs.push_back(vpOptimizableKFs.back()->mPrevKF);
+            vpOptimizableKFs.back()->mnBALocalForKF = pKF->mnId;
+        }
+        else
+            break;
+    }
+
+    int N = vpOptimizableKFs.size();
+
+    if(!mGNSSFramework->checkInitialization(N, pKF)){return;} // Check if initialization has to run
+
+    // Set up optimizer
+    g2o::SparseOptimizer optimizer;
+    optimizer.setVerbose(true);
+
+    g2o::BlockSolverX::LinearSolverType * linearSolver;
+    linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
+    g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
+
+    g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(solver_ptr);
+    solver->setUserLambdaInit(1e0);
+    optimizer.setAlgorithm(solver);
+
+    // Add SE3 transform vertex
+    g2o::VertexSE3Expmap * v_T_WG_WL = new g2o::VertexSE3Expmap(); // Vertice: transformation ground to local
+
+
+    v_T_WG_WL->setEstimate(mGNSSFramework->T_WG_WL); 
+    v_T_WG_WL->setId(mGNSSFramework->mnId);
+
+    optimizer.addVertex(v_T_WG_WL);
+
+    //Connect edges
+    for(int i=0;i<N;i++)
+    {
+        KeyFrame* pKFi = vpOptimizableKFs[i];
+        if(pKFi->fGF && pKFi->mnId != mGNSSFramework->refKFId){ //If GNSS Keyframes and not reference frame for ECEF to ground
+
+            EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal(mGNSSFramework); // Edge: ground to local
+        
+            e_WG_WL->setLocalPosition(pKFi);
+            /* TODO:
+            e_ECEFLocal->p_WE_gl = pKFi->GetSPP().cast<double>(); or e_WG_WL->setGNSSPos(pKFi);
+            */
+            e_WG_WL->setVertex(0, optimizer.vertex(mGNSSFramework->mnId));
+            optimizer.addEdge(e_WG_WL);
+    
+        }
+    }    
+    //Optimize 
+   
+    optimizer.initializeOptimization();
+    optimizer.computeActiveErrors();
+    float err2 = optimizer.activeRobustChi2();
+    optimizer.optimize(10); 
+    float err_end2 = optimizer.activeRobustChi2();
+
+    //Save optimized variable
+    mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
+
+    //cout<<"   Transform:  " << mGNSSFramework->T_WG_WL << endl;
+
 }
 
 Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &start, const int &end)

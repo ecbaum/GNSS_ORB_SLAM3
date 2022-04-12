@@ -860,28 +860,105 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
     return W;
 }
 
-
 //Erik
-EdgePosBias::EdgePosBias() : g2o::BaseMultiEdge<3,Eigen::Vector3d>()
-{
-    Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
-    setInformation(Info);
+
+//Methods
+
+
+
+bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
+
+    bool optimized = initOptCounter > initOptThreshold;
+    bool keyFrameReq =  N_KF > KeyFrameThreshold;
+
+    if(optimized){
+        if(keyFrameReq){
+            cout << "GNSS already initalized" << endl;
+            return false;
+        }else{
+            cout << "GNSS initalized but local map dropped. Reinitialization..." << endl;
+            setupInitialization(cKF);
+        }
+    }
+
+    if(keyFrameReq){
+        if(!bInitalized){setupInitialization(cKF);}
+
+        cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
+        initOptCounter += 1;
+
+        return true;
+    }else{
+        cout << "To key keyframes in local map required to start optimization for GNSS initalization" << endl;
+        cout << "    " << N_KF << " / " << (KeyFrameThreshold+1) << endl;
+        initOptCounter = 0;
+        return false;
+    }
 }
 
-void EdgePosBias::computeError()
-{
-    const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);
+void GNSSFramework::setupInitialization(KeyFrame * cKF){
+    Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
+    Eigen::Vector3d * t_ = new Eigen::Vector3d();
 
-    const Eigen::Vector3d er = VP1->estimate().twb.cwiseProduct(mBias) - VP1->estimate().twb;
-    _error << er;
+    r_->setIdentity();
+    t_->setZero();
+
+    T_WG_WL.setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
+    T_WG_WL.setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
+
+    /*Todo
+        p_WE_WG = GeodeticToECEF(cKF->getSPP())
+    */
+    p_WE_WG = cKF->GetPose().translation().cast<double>();
+    refKFId = cKF->mnId;
+    bInitalized = true;
 }
 
 
-VertexPosBias::VertexPosBias(KeyFrame *pKF)
-{
-    setEstimate(pKF->GetPosBias().cast<double>());
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates){
+
+    double a, b, e2, phi, lambda, h, N_phi, x, y, z;
+
+    a = 6378137.0000; // m (WGS-84 ellipsoid, semi-major axis)
+    b = 6356752.3142; // m (WGS-84 ellipsoid, semi-minor axis)
+    e2 = 1 - pow(b, 2) / pow(a, 2) ; 
+
+    phi    = geodeticCoordinates[0];
+    lambda = geodeticCoordinates[1];
+    h      = geodeticCoordinates[2];
+
+    N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
+
+    x = (N_phi + h) * cos(phi) * cos(lambda);
+    y = (N_phi + h) * cos(phi) * sin(lambda);
+    z = (pow(b, 2) / pow(a, 2) * N_phi + h) * sin(phi);
+
+    Eigen::Vector3d * p_WE_gl = new Eigen::Vector3d(x, y, z);
+    return *p_WE_gl; 
 }
 
 
+Eigen::Vector3d EdgeSPPToLocal::ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates){
+
+    Eigen::Matrix3d R_WG_WE;
+    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
+
+    phi    = geodeticCoordinates[0];
+    lambda = geodeticCoordinates[1];
+
+    R11 = -sin(lambda);          R12 =  cos(lambda);          R13 = 0;
+    R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
+    R31 = -cos(phi)*cos(lambda); R32 =  cos(phi)*sin(lambda); R33 = sin(phi);
+
+    R_WG_WE.row(0) << R11, R12, R13;
+    R_WG_WE.row(1) << R21, R22, R23;
+    R_WG_WE.row(2) << R31, R32, R33;
+
+    p_WG_gl = R_WG_WE * (p_WE_gl - p_WE_WG); 
+    return p_WG_gl; 
+}
+
+//E
 
 }
+ 
