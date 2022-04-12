@@ -429,7 +429,7 @@ public:
     vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
     vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
     vector<double> tstepBetweenKFs; //GNSS Martin
-     vector<double> mECEF;
+     vector<double> SPP_geodetic;
 
     
     //Erik

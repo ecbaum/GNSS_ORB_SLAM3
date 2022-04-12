@@ -234,7 +234,7 @@ protected:
     y_GNSS_ecef;
     z_GNSS_ecef;
      */
-     vector<double> mECEF;
+     vector<double> SPP_geodetic;
 
    
     // Perform preintegration from last frame
