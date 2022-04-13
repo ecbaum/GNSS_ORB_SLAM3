@@ -865,12 +865,12 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 //Methods
 
 bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
-
+    
    // cout<<"initOptCounter   "<<initOptCounter << endl;
     //cout << "initOptThreshold   "<< initOptThreshold << endl;
 
 
-
+/*
     if(initOptCounter > initOptThreshold){
         if(N_KF > KeyFrameThreshold){
             cout << "---";
@@ -880,7 +880,7 @@ bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
             setupInitialization(cKF);
         }
     }
-
+*/
     if(N_KF > KeyFrameThreshold){
         if(!bInitalized){
             if(!setupInitialization(cKF)){

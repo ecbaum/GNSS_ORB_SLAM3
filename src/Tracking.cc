@@ -2208,17 +2208,7 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
-/*
-         // Erik GNSS
-        // frame_counter_for_GNSS++;
-       // if(frame_counter_for_GNSS%5 == 0 ){
-          //  cout << "insert GNSS frame" << endl;
-            //mCurrentFrame.convertToGNSS = true;
-            cout << "prev: " << mCurrentFrame.mpPrevFrame->mTimeStamp; 
-        cout << "Data: " << GNSS_data[GNSS_counter][0]; 
-        cout << "current: " << mCurrentFrame.mTimeStamp << endl; 
-        }
-       */
+
         
    if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 

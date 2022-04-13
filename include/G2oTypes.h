@@ -875,7 +875,7 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     GNSSFramework(){
         initOptCounter = 0;
-        initOptThreshold = 3;
+        initOptThreshold = 10;
         KeyFrameThreshold = 3;
         bInitalized = false;
     }
@@ -948,18 +948,18 @@ public:
     Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
 
     void computeError(){
-        /* Test4
+        /* Test4        */
+
         p_WE_gl = GeodeticToECEF(geodeticCoordinates);         // From Geodetic to reciever to ECEF to reciever
         p_WG_gl = ECEFToENU(p_WE_gl, geodeticCoordinates);     // From ECEF to reciever to ENU to reciever
 
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << p_WG_gl - TF->estimate().map(p_WL_gl);
-        cout << "_ERROR" << _error << endl;
-        */
 
         //test1
-        const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
-        _error << TF->estimate().map(p_WL_gl) - p_WG_gl;
+       // const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
+        //_error << TF->estimate().map(p_WL_gl) - p_WG_gl;
+        cout << "_ERROR" << _error << endl;
 
     }
     /* Description of procedure in paper

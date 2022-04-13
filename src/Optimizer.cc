@@ -2389,14 +2389,17 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //cout << ":::::::::::starting optimizer" << endl;
     Map* pCurrentMap = pKF->GetMap();
 
-    int maxOpt=10;
+    int maxOpt=40;
     int opt_it=10;
     if(bLarge)
     {
         maxOpt=25;
         opt_it=4;
     }
-    const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
+    //const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
+    const int Nd = (int)pCurrentMap->KeyFramesInMap();
+
+    cout << "Nd" << Nd <<endl;
     const unsigned long maxKFid = pKF->mnId;
 
     vector<KeyFrame*> vpOptimizableKFs;
@@ -3088,10 +3091,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 }*/
 
 void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
+
     // Collect keyframes into chain
     Map* pCurrentMap = pKF->GetMap();
 
-    int maxOpt=10;
+    int maxOpt=40;
 
     const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
@@ -3117,15 +3121,26 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     int N = vpOptimizableKFs.size();
 
 
-    /* Test 2
+    /* Test 2   */
+
+    int gKFcounter = 0;
+    for(int i=0;i<N;i++)
+    {
+        KeyFrame* pKFi = vpOptimizableKFs[i];
+        if(pKFi->fGF){
+            gKFcounter++;
+        }
+    }
+    if(gKFcounter < 3){
+        return;
+    }
+
+
     if(!mGNSSFramework->checkInitialization(N, pKF)){return;} // Check if initialization has to run
     cout << "Check init:      " << endl;
-    */
-
-
     // Set up optimizer
     g2o::SparseOptimizer optimizer;
-    optimizer.setVerbose(true);
+    //optimizer.setVerbose(true);
 
     g2o::BlockSolverX::LinearSolverType * linearSolver;
     linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
@@ -3168,17 +3183,29 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
 
     _T->setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
     _T->setTranslation(*static_cast<const Eigen::Vector3d *>(t_)); 
-    //
-
-
+    
+/*
+    int test = 0;
+    for(int i=0;i<N;i++)
+    {
+        KeyFrame* pKFi = vpOptimizableKFs[i];
+        cout << i << "/" << N;
+        if(pKFi->fGF){
+            cout << " GFK" << endl;
+        }else{
+            cout << " --KF" << endl;
+        }
+    }
+*/
     //Connect edges
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-        //Test4: if(pKFi->fGF && pKFi->mnId != mGNSSFramework->refKFId){ //If GNSS Keyframes and not reference frame for ECEF to ground
-        if(pKFi->fGF){ //Test1
+        //Test4: 
+        if(pKFi->fGF && pKFi->mnId != mGNSSFramework->refKFId){ //If GNSS Keyframes and not reference frame for ECEF to ground
+        //if(pKFi->fGF){ //Test1
             /* unmodified, test4
-
+            
             EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal(mGNSSFramework); // Edge: ground to local
         
             e_WG_WL->setLocalPosition(pKFi);
@@ -3187,31 +3214,32 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
             e_WG_WL->setVertex(0, optimizer.vertex(mGNSSFramework->mnId));
             optimizer.addEdge(e_WG_WL);
             */
-
+            cout << "gkf räknare:  " << gKFcounter << endl;
             //Test1:
-            EdgeSPPToLocal * e_ECEFLocal = new EdgeSPPToLocal();
+            /*
 
             e_ECEFLocal->p_WL_gl = pKFi->GetPose().translation().cast<double>();
             e_ECEFLocal->p_WG_gl = _T->map(pKFi->GetPose().translation().cast<double>());
             e_ECEFLocal->setVertex(0,optimizer.vertex(mGNSSFramework->mnId));
             optimizer.addEdge(e_ECEFLocal);
+            */
+            EdgeSPPToLocal * e_ECEFLocal = new EdgeSPPToLocal();
 
-            /*Test3 Den kommer inte konvergera men kanske optimera
+            //Test3 Den kommer inte konvergera men kanske optimera
             e_ECEFLocal->p_WL_gl = pKFi->GetPose().translation().cast<double>();
-            e_ECEFLocal->p_WG_gl = pKFi->get_SPP()
+            e_ECEFLocal->p_WG_gl = pKFi->get_SPP();
             e_ECEFLocal->setVertex(0,optimizer.vertex(mGNSSFramework->mnId));
             optimizer.addEdge(e_ECEFLocal);
-            */
         }
     }    
     //Optimize 
-   
+ 
+
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float err2 = optimizer.activeRobustChi2();
     optimizer.optimize(10); 
     float err_end2 = optimizer.activeRobustChi2();
-
     //Save optimized variable
     mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
 
