@@ -3268,7 +3268,7 @@ void Tracking::CreateNewKeyFrame()
 
     if(mCurrentFrame.convertToGNSS){
         pKF->setGNSS();
-        cout << "GNSS keyframe inserted" << endl;
+//        cout << "GNSS keyframe inserted" << endl;
         pKF-> SPP_geodetic = SPP_geodetic; 
         SPP_geodetic.clear();  
     }
@@ -4183,6 +4183,11 @@ void Tracking::Release()
     mbStopped = false;
     mbStopRequested = false;
 }
+
+
+
+
 #endif
+
 
 } //namespace ORB_SLAM

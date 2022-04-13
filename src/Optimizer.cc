@@ -2386,7 +2386,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, bool bLarge, bool bRecInit)
 {
-    cout << ":::::::::::starting optimizer" << endl;
+    //cout << ":::::::::::starting optimizer" << endl;
     Map* pCurrentMap = pKF->GetMap();
 
     int maxOpt=10;
@@ -3025,7 +3025,7 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     int N = vpOptimizableKFs.size();
 
     if(!mGNSSFramework->checkInitialization(N, pKF)){return;} // Check if initialization has to run
-
+    cout << "Check init:      " << endl;
     // Set up optimizer
     g2o::SparseOptimizer optimizer;
     optimizer.setVerbose(true);
@@ -3040,13 +3040,16 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
 
     // Add SE3 transform vertex
     g2o::VertexSE3Expmap * v_T_WG_WL = new g2o::VertexSE3Expmap(); // Vertice: transformation ground to local
-
+    cout << "ADD SE3 tv :      " << endl;
 
     v_T_WG_WL->setEstimate(mGNSSFramework->T_WG_WL); 
     v_T_WG_WL->setId(mGNSSFramework->mnId);
-
+    cout << "v_T_WG_WL:      " << endl;
+    
     optimizer.addVertex(v_T_WG_WL);
-
+    if(optimizer.vertex(mGNSSFramework->mnId)){
+        cout << "ADDVERTEX:      " <<optimizer.vertex(mGNSSFramework->mnId)->estimate() << endl;
+    }
     //Connect edges
     for(int i=0;i<N;i++)
     {
@@ -3056,9 +3059,12 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
             EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal(mGNSSFramework); // Edge: ground to local
         
             e_WG_WL->setLocalPosition(pKFi);
+            e_WG_WL->p_WE_gl = pKFi->get_SPP();
+
             /* TODO:
             e_ECEFLocal->p_WE_gl = pKFi->GetSPP().cast<double>(); or e_WG_WL->setGNSSPos(pKFi);
             */
+           
             e_WG_WL->setVertex(0, optimizer.vertex(mGNSSFramework->mnId));
             optimizer.addEdge(e_WG_WL);
     

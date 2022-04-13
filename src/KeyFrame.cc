@@ -1240,7 +1240,22 @@ void KeyFrame::IntegrateToGNSS(){
     }
 }
 
+Eigen::Vector3d KeyFrame::get_SPP(){
 
+    std::vector<double> a = std::vector<double>(SPP_geodetic.begin() + 2, SPP_geodetic.end());
+
+    Eigen::Vector3d v = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+    
+
+    //cout << "SPPMAN  " << SPP_geodetic[2] << endl;
+
+    //double* ptr = &SPP_geodetic[2];
+
+    //Eigen::Vector3d v = Eigen::Map<const Eigen::Vector3d>(ptr, 3);
+
+    return v;
+
+}
 
 //E
 

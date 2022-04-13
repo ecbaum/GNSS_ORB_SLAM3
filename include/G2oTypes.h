@@ -845,7 +845,7 @@ public:
 
 // Erik
 
-Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates);
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates);
 
 struct SatelliteData{
     int satId;                      // Unique satellite identifier
@@ -874,12 +874,13 @@ class GNSSFramework
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     GNSSFramework(){
+        initOptCounter = 0;
         initOptThreshold = 3;
         KeyFrameThreshold = 3;
         bInitalized = false;
     }
 
-    void setupInitialization(KeyFrame * cKF);
+    bool setupInitialization(KeyFrame * cKF);
     bool checkInitialization(int N_KF, KeyFrame * cKF);
     void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
     g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
@@ -949,6 +950,7 @@ public:
 
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << p_WG_gl - TF->estimate().map(p_WL_gl);
+        cout << "_ERROR" << _error << endl;
     }
     /* Description of procedure in paper
 

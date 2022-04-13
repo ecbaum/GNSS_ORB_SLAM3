@@ -429,12 +429,12 @@ public:
     vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
     vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
     vector<double> tstepBetweenKFs; //GNSS Martin
-     vector<double> SPP_geodetic;
+    vector<double> SPP_geodetic;
 
     
     //Erik
 
- 
+    Eigen::Vector3d get_SPP();
     IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
     double timeStampGNSS;
     double GNSS_deltaT;

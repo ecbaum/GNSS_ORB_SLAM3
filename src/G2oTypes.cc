@@ -864,16 +864,16 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 
 //Methods
 
-
-
 bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
 
-    bool optimized = initOptCounter > initOptThreshold;
-    bool keyFrameReq =  N_KF > KeyFrameThreshold;
+   // cout<<"initOptCounter   "<<initOptCounter << endl;
+    //cout << "initOptThreshold   "<< initOptThreshold << endl;
 
-    if(optimized){
-        if(keyFrameReq){
-            cout << "GNSS already initalized" << endl;
+
+
+    if(initOptCounter > initOptThreshold){
+        if(N_KF > KeyFrameThreshold){
+            cout << "---";
             return false;
         }else{
             cout << "GNSS initalized but local map dropped. Reinitialization..." << endl;
@@ -881,8 +881,12 @@ bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
         }
     }
 
-    if(keyFrameReq){
-        if(!bInitalized){setupInitialization(cKF);}
+    if(N_KF > KeyFrameThreshold){
+        if(!bInitalized){
+            if(!setupInitialization(cKF)){
+                return false;
+            }
+        }
 
         cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
         initOptCounter += 1;
@@ -896,7 +900,12 @@ bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
     }
 }
 
-void GNSSFramework::setupInitialization(KeyFrame * cKF){
+bool GNSSFramework::setupInitialization(KeyFrame * cKF){
+    cout<<"setupInitialization:::::::::::::::::::::::::::::::::::::::::::::::"<< endl;
+    if(!cKF->fGF){
+        return false;
+    }
+    cout << "cKFID SI    " << cKF-mnId << endl;
     Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
     Eigen::Vector3d * t_ = new Eigen::Vector3d();
 
@@ -909,16 +918,22 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
     /*Todo
         p_WE_WG = GeodeticToECEF(cKF->getSPP())
     */
-    p_WE_WG = cKF->GetPose().translation().cast<double>();
+
+    cout<< "1:::::::::::::::::::::"<< endl;
+    p_WE_WG = GeodeticToECEF(cKF->get_SPP());
+    cout<< "2:::::::::::::::::::::"<< endl;
+
+    //p_WE_WG = cKF->GetPose().translation().cast<double>();
     refKFId = cKF->mnId;
     bInitalized = true;
+    return true;
 }
 
 
-Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d &geodeticCoordinates){
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
     double a, b, e2, phi, lambda, h, N_phi, x, y, z;
-
+    cout << "geodeticCoordinates:    " << geodeticCoordinates << endl;
     a = 6378137.0000; // m (WGS-84 ellipsoid, semi-major axis)
     b = 6356752.3142; // m (WGS-84 ellipsoid, semi-minor axis)
     e2 = 1 - pow(b, 2) / pow(a, 2) ; 
