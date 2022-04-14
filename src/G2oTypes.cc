@@ -520,6 +520,8 @@ void EdgeInertial::computeError()
     const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);
     const VertexPose* VP2 = static_cast<const VertexPose*>(_vertices[4]);
     const VertexVelocity* VV2 = static_cast<const VertexVelocity*>(_vertices[5]);
+    const VertexGDir * VG = static_cast<const VertexVelocity*>(_vertices[6]);
+
     const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
     const Eigen::Matrix3d dR = mpInt->GetDeltaRotation(b1).cast<double>();
     const Eigen::Vector3d dV = mpInt->GetDeltaVelocity(b1).cast<double>();
@@ -528,7 +530,7 @@ void EdgeInertial::computeError()
     const Eigen::Vector3d er = LogSO3(dR.transpose()*VP1->estimate().Rwb.transpose()*VP2->estimate().Rwb);
     const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(VV2->estimate() - VV1->estimate() - g*dt) - dV;
     const Eigen::Vector3d ep = VP1->estimate().Rwb.transpose()*(VP2->estimate().twb - VP1->estimate().twb
-                                                               - VV1->estimate()*dt - g*dt*dt/2) - dP;
+                                                               - VV1->estimate()*dt - VG.estimate()*dt*dt/2) - dP;
 
     _error << er, ev, ep;
 }
