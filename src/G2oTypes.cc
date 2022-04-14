@@ -864,48 +864,27 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 
 //Methods
 
-bool GNSSFramework::checkInitialization(int N_KF, KeyFrame * cKF){
-    
-   // cout<<"initOptCounter   "<<initOptCounter << endl;
-    //cout << "initOptThreshold   "<< initOptThreshold << endl;
+bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
+
+    //todo: detect map reset?
 
 
-/*
-    if(initOptCounter > initOptThreshold){
-        if(N_KF > KeyFrameThreshold){
-            cout << "---";
-            return false;
-        }else{
-            cout << "GNSS initalized but local map dropped. Reinitialization..." << endl;
-            setupInitialization(cKF);
-        }
-    }
-*/
-    if(N_KF > KeyFrameThreshold){
-        if(!bInitalized){
-            if(!setupInitialization(cKF)){
-                return false;
-            }
-        }
+    if(!cKF->fGF){return false;}
 
+    if(N_GKF > KeyFrameThreshold){
+        if(!bInitalized){setupInitialization(cKF);}
         cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
         initOptCounter += 1;
-
         return true;
     }else{
-        cout << "To key keyframes in local map required to start optimization for GNSS initalization" << endl;
-        cout << "    " << N_KF << " / " << (KeyFrameThreshold+1) << endl;
+        cout << "   #GKF needed for init:    " << N_GKF << " / " << (KeyFrameThreshold+1) << endl;
         initOptCounter = 0;
         return false;
     }
 }
 
-bool GNSSFramework::setupInitialization(KeyFrame * cKF){
-    cout<<"setupInitialization:::::::::::::::::::::::::::::::::::::::::::::::"<< endl;
-    if(!cKF->fGF){
-        return false;
-    }
-    cout << "cKFID SI    " << cKF-mnId << endl;
+void GNSSFramework::setupInitialization(KeyFrame * cKF){
+
     Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
     Eigen::Vector3d * t_ = new Eigen::Vector3d();
 
@@ -915,32 +894,25 @@ bool GNSSFramework::setupInitialization(KeyFrame * cKF){
     T_WG_WL.setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
     T_WG_WL.setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
 
-    /*Todo
-        p_WE_WG = GeodeticToECEF(cKF->getSPP())
-    */
-
-    cout<< "1:::::::::::::::::::::"<< endl;
     p_WE_WG = GeodeticToECEF(cKF->get_SPP());
-    cout<< "2:::::::::::::::::::::"<< endl;
 
-    //p_WE_WG = cKF->GetPose().translation().cast<double>();
     refKFId = cKF->mnId;
     bInitalized = true;
-    return true;
 }
 
 
 Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
-    double a, b, e2, phi, lambda, h, N_phi, x, y, z;
-    cout << "geodeticCoordinates:    " << geodeticCoordinates << endl;
+    double a, b, e2, phi, lambda, h, N_phi, x, y, z, deg2rad;
+
+    deg2rad = 3.141592653589793/180;
     a = 6378137.0000; // m (WGS-84 ellipsoid, semi-major axis)
     b = 6356752.3142; // m (WGS-84 ellipsoid, semi-minor axis)
     e2 = 1 - pow(b, 2) / pow(a, 2) ; 
 
-    phi    = geodeticCoordinates[0];
-    lambda = geodeticCoordinates[1];
-    h      = geodeticCoordinates[2];
+    phi    = geodeticCoordinates[0]*deg2rad;
+    lambda = geodeticCoordinates[1]*deg2rad;
+    h      = geodeticCoordinates[2]*deg2rad;
 
     N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
 
