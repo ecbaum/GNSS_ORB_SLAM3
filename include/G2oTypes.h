@@ -851,20 +851,16 @@ struct SatelliteData{
     int satId;                      // Unique satellite identifier
     double pr;                      // Psuedorange measurement
     double prCov;                   // Covariance of psuedorange measurement
-    double p_WE;                    // Satellite position in {WE} frame
+    Eigen::Vector3d p_WE;           // Satellite position in {WE} frame
     double sClockBiasPrior;         // Prior estimate of satellite clock bias 
-    /*
-    Discuss:
-        sClockBias node
-        covariance
-        random walk model
-    */
 };
 
 struct EpochData{
+    int epochIdx;
     double epochTime;               // Moment of time of epoch 
     double gKFTime;                 // Moment of time of corresponding GNSS KeyFrame
-    KeyFrame * gKF;                 // Pointer to GNSS KeyFrame
+    double dT = epochTime - gKFTime;
+    KeyFrame * gKF;                 // Pointer to GNSS KeyFrame (remove?)
     vector<SatelliteData> satData;  // Vector of satellite data
     double rClockBiasPrior;         // Prior estimate of reciever clock bias w.r.t. satellite constellation
 };
@@ -885,7 +881,7 @@ public:
     void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
     g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
 
-    vector<EpochData> epData;
+    vector<EpochData> epochData;
 
     // Initialization
     int initOptCounter;         // # of optimizations performed
@@ -894,27 +890,75 @@ public:
     int refKFId;                // Id of reference keyframe
     Eigen::Vector3d p_WE_WG;    // Reference point for initalization
     Eigen::Matrix3d R_WE_WG;
+    const Eigen::Vector3d p_b_g;
     g2o::SE3Quat T_WG_WL;       // Transformation from ground to local
     bool bInitalized;
 
     int mnId = 10000;  
-    int idSp = 100;
-    /* ID convention for GNSS vertices
+    int idSpacing = 100;
 
-    mnId: root ID for GNSS vertices
-    idSp: spacing in IDs between epochs
+    // Optimizer vertex ID for reciever and satellite clock biases
+    int recClockBiasID(int epochIdx){return mnId + 1 + epochIdx*idSpacing;}
+    int satClockBiasID(int epochIdx, int satIdx){return recClockBiasID(epochIdx) + 1 + satIdx;}
 
-        vertex ID of T_WG_WL: 
-            mnId
-        epochId of epoch i: 
-            mnId + 1 + idSp*i
-        vertex ID of rClockBiasPrior of epoch i: 
-            epochId
-        vertex ID of sClockBiasPrior j of epoch i: 
-            epochId + 1 + j
-    */
 };
 
+/* Psuedocode for how to set up optimization network for psuedorange
+
+
+    //Vertex for ENU to local
+
+    Add VertexSE3Expmap
+        estimate() = mGNSSFramework->T_WG_WL
+        id = mGNSSFramework->mnId
+    
+
+    // setup reciever clock and satellite clock bias
+
+    for GKF_iter in GNSS_Keyframes:
+        ep_idx = GKF_iter.epoch_index;
+        rbias_prior = epochs[ep_idx].rClockBiasPrior;
+
+        Add VertexClockBias:
+            VertexClockBias(rbias_prior)
+            id = recClockBiasID(recClockBiasID(ep_idx));
+        
+        add EdgeClockPrior:
+            EdgeClockPrior(rbias_prior, cov???)
+            vertex0 = optimizer.vertex(satClockBiasID(ep_idx))  
+    
+
+        for sat_idx in epochs[epoch_idx].satData:
+            sbias_prior = epochs[ep_idx].satData[sat_idx].sClockBiasPrior;
+
+            Add VertexClockBias:
+                VertexClockBias(sbias_prior)
+                id = satClockBiasID(ep_idx, sat_idx);
+            
+            add EdgeClockPrior:
+                EdgeClockPrior(sbias_prior, cov???)
+                vertex0 = optimizer.vertex(satClockBiasID(ep_idx, sat_idx))
+
+
+    // setup psuedorange edges
+
+    for GKF_iter in GNSS_Keyframes:
+        ep_idx = GKF_iter.epoch_index;
+
+        for sat_idx in epochs[epoch_idx].satData:
+            edge = EdgePsuedorange(framework);
+            edge.setMeasurements(framework, GKF_iter, ep_idx, sat_idx);
+
+            vertex0 = optimizer.vertex(id for VertexPose of GKF_iter)
+            vertex1 = optimizer.vertex(id for VertexVelocity of GKF_iter)
+            vertex2 = optimizer.vertex(id for VertexGyroBias of GKF_iter)
+            vertex3 = optimizer.vertex(id for VertexAccBias of GKF_iter)
+            vertex4 = optimizer.vertex(framework->mnId)
+            vertex5 = optimizer.vertex(recClockBiasID(ep_idx))
+            vertex6 = optimizer.vertex(satClockBiasID(ep_idx, sat_idx))
+            vertex7 = GDir???
+            
+*/
 
 
 class EdgeSPPToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
@@ -925,7 +969,7 @@ public:
     EdgeSPPToLocal(GNSSFramework * mGNSSFramework){
         p_WE_WG = mGNSSFramework->p_WE_WG;
         R_WE_WG = mGNSSFramework->R_WE_WG;
-        
+
         Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
         setInformation(Info);
     }
@@ -962,8 +1006,6 @@ public:
         cout << "   -error:   ";
         for(int i=0;i<3;i++){ cout <<  _error[i] << "    "; }
         cout << endl;
-
-        //cout << "_ERROR" << _error << endl;
 
     }
     /* Description of procedure in paper
@@ -1099,9 +1141,11 @@ class EdgePsuedorange : public g2o::BaseMultiEdge<1,double>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-    EdgePsuedorange(){
-        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
-        setInformation(Info);
+    EdgePsuedorange(GNSSFramework * framework){
+        // Global data
+        p_WE_WG_ = framework->p_WE_WG;
+        R_WE_WG_ = framework->R_WE_WG;
+        p_b_g_   = framework->p_b_g;
     }
 
     virtual bool read(std::istream& is){return false;}
@@ -1109,29 +1153,44 @@ public:
 
     double c = 299792458;         // m/s
     Eigen::Vector3d gI;
-    // Measurements
 
-    double dT;                    // Time between moment of epoch m(e) and moment of exposure, k
-    IMU::Preintegrated * pIntGNSS;// Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
-    double pr_;                    // Psuedorange measurement
-    Eigen::Vector3d P_WE_Sie;     // Position of satellite i in ECEF
-    
     // Transformation parameters 
+    Eigen::Vector3d p_WE_WG_;      // Coordinate of the origin of {WG} (ENU) from perspective of {WG} (ECEF)
+    Eigen::Matrix3d R_WE_WG_;      // Rortation for ECEF to ENU
+    Eigen::Vector3d p_b_g_;        // Translational component of IMU-GNSS receiver extrinsic parameter
 
-    const Eigen::Vector3d p_WE_WG;      // Coordinate of the origin of {WG} (ENU) from perspective of {WG} (ECEF)
-    const Eigen::Matrix3d R_WE_WG;      // Rortation for ECEF to ENU
-    const Eigen::Vector3d p_b_g;        // Translational component of IMU-GNSS receiver extrinsic parameter
+    // Measurements
+    double dT;                      // Time between moment of epoch m(e) and moment of exposure, k
+    IMU::Preintegrated * pIntGNSS;  // Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
+    double pr_;                     // Psuedorange measurement
+    Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
 
+    void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
+        /* Todo:
+                Move epochIdx to keyframe
+                set info based on covariance in psuedorange, position estimates and biases
+        */
 
-    void setMeasurements(EpochData epData, int satIdx){};
+        // Epoch data
+        dT = framework->epochData[epochIdx].dT;
+        pIntGNSS = GKF->mpImuPreintegratedToGNSS;
+
+        // Satellite data
+        pr_ = framework->epochData[epochIdx].satData[satIdx].pr;
+        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE;
+
+        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
+        setInformation(Info);
+
+    };
     void computeError(){
         const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);                     // Pose from keyframe
         const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);              // Velocity from keyframe
         const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);              // Gyrobias from keyframe
         const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);                // Accbias from keyframe
         const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[4]);  // Transformation of between ground (ENU) and local (SLAM)
-        const VertexClockBias* b_si = static_cast<const VertexClockBias*>(_vertices[5]);          // Clock bias for satellite i
-        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[6]);           // Clock bias for reciever
+        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[5]);           // Clock bias for reciever        
+        const VertexClockBias* b_si = static_cast<const VertexClockBias*>(_vertices[6]);          // Clock bias for satellite i
         const VertexGDir * VG = static_cast<const VertexGDir*>(_vertices[7]);                     // Gravity direction
 
         const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
@@ -1139,8 +1198,13 @@ public:
         const Eigen::Vector3d dV = pIntGNSS->GetDeltaVelocity(b1).cast<double>();
         const Eigen::Vector3d dP = pIntGNSS->GetDeltaPosition(b1).cast<double>();
 
+        const Eigen::Vector3d p_WE_WG = static_cast<const Eigen::Vector3d>(p_WE_WG_);             // Retrieve transformations
+        const Eigen::Matrix3d R_WE_WG = static_cast<const Eigen::Matrix3d>(R_WE_WG_);
+        const Eigen::Vector3d p_b_g   = static_cast<const Eigen::Vector3d>(p_b_g_);
+
         gI << 0, 0, -IMU::GRAVITY_VALUE;              
-        Eigen::Vector3d g = VG->estimate().Rwg*gI;
+        Eigen::Vector3d g = VG->estimate().Rwg*gI;                                                // Rotate gravity vector
+
                                                                                                   // Keyframe position translated to moment of exposure
         const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb + VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;
         
@@ -1148,9 +1212,9 @@ public:
         const Eigen::Vector3d P_WG_WL = VT->estimate().translation();
         
         const double pr =  static_cast<const double>(pr_);
-        Eigen::Matrix<double, 1,1 > pr_error(( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_si->estimate()) - pr);
-
-        _error = pr_error;
+        const double pr_error = ( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_si->estimate()) - pr;
+    
+        _error = Eigen::Matrix<double, 1,1 > (pr_error);
     }
 };
 
