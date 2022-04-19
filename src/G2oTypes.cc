@@ -898,15 +898,16 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
 
     // Set rotation and traslation from ECEF to ENU in GNSS framework
 
-    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
+    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda, deg2rad;
     Eigen::Matrix3d R_WG_WE;
+    deg2rad = 3.141592653589793/180;
 
     Eigen::Vector3d geodeticCoordinates = cKF->get_SPP();
 
     p_WE_WG = GeodeticToECEF(cKF->get_SPP());
 
-    phi    = geodeticCoordinates[0];
-    lambda = geodeticCoordinates[1];
+    phi    = geodeticCoordinates[0]*deg2rad;
+    lambda = geodeticCoordinates[1]*deg2rad;
 
     R11 = -sin(lambda);          R12 =  cos(lambda);          R13 = 0;
     R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);

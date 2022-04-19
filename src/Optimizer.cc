@@ -3031,7 +3031,7 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
         //Test4: 
         if(pKFi->fGF && pKFi->mnId != mGNSSFramework->refKFId){ //If GNSS Keyframes and not reference frame for ECEF to ground
 
-            EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal();
+            EdgeSPPToLocal * e_WG_WL = new EdgeSPPToLocal(mGNSSFramework);
 
             //Test3 
             e_WG_WL->p_WL_gl = pKFi->GetPose().translation().cast<double>();
@@ -3050,6 +3050,9 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     float err_end2 = optimizer.activeRobustChi2();
     //Save optimized variable
     mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
+    cout << "Transform"<<endl;
+    cout << mGNSSFramework->T_WG_WL; 
+    cout << endl;
 
 }
 
