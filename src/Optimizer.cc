@@ -2665,33 +2665,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vear[i]->setInformation(InfoA);           
 
             optimizer.addEdge(vear[i]);
-            /*if(test){
-                cout << "Test finns, ämdrar till false"<< endl;
-                test = false;
-            }
-                    if(!test){
-                cout << "Test finns inte, ämdrar till true"<< endl;
-                test = true; 
-            }
-            */
-         /*
-            if(i == N-1){
-                cout << "N: " << N <<endl;
-                cout << "1: " << endl;
-                EdgePosBias* edgePos = new EdgePosBias();
-                cout << "2: " << endl;
-                Eigen::Vector3d v(1.05,1.05,1.05);
-                cout << "3: " << endl;
-                edgePos->mBias = v;
-                cout << "4: " << endl;
-        
-        
-               // edgePos->setVertex(0,VP2);  
-                cout << "5: " << endl;
-                //optimizer.addEdge(edgePos);
-                cout << "6: " << endl;
-            }
-            */
+
         }
         else
             cout << "ERROR building inertial edge" << endl;
@@ -3061,7 +3035,7 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
 
             //Test3 
             e_WG_WL->p_WL_gl = pKFi->GetPose().translation().cast<double>();
-            e_WG_WL->p_WG_gl = pKFi->get_SPP();
+            e_WG_WL->geodeticCoordinates = pKFi->get_SPP();
             e_WG_WL->setVertex(0,optimizer.vertex(mGNSSFramework->mnId));
             optimizer.addEdge(e_WG_WL);
         }

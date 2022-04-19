@@ -2209,8 +2209,9 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
-        
-   if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
+    while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
+
+    if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 
             mCurrentFrame.convertToGNSS = true;
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
@@ -2219,7 +2220,7 @@ void Tracking::Track()
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
             GNSS_counter++;
-       }
+        }
 
 
         // Update drawer

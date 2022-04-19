@@ -934,7 +934,7 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
     phi    = geodeticCoordinates[0]*deg2rad;
     lambda = geodeticCoordinates[1]*deg2rad;
-    h      = geodeticCoordinates[2]*deg2rad;
+    h      = geodeticCoordinates[2];
 
     N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
 
