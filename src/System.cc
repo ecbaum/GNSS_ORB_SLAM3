@@ -201,6 +201,21 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
     mpTracker->GNSS_data = readGNSS(pathGNSS); //Loading GNSSdata to tracker. 
+    /* TODO:
+        read psuedorange data 
+
+        std::vector<EpochData> epochdata;
+
+        for data_iter in gnss data:
+            epoch_iter = new EpochData;
+
+            insert data from data_iter to epoch_data
+             
+            epochdata.push_back(epoch_iter);
+
+
+
+    */
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,

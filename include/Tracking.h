@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "G2oTypes.h"
 
 #include "GeometricCamera.h"
 
@@ -173,6 +174,9 @@ public:
     vector<vector<double>> GNSS_data;
     int GNSS_counter;
     int frame_counter_for_GNSS;
+    vector<EpochData> epoch_data;
+    int epoch_idx_counter;
+
     vector<MapPoint*> GetLocalMapMPS();
 
     bool mbWriteStats;

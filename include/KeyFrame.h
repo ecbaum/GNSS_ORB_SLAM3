@@ -441,6 +441,7 @@ public:
     bool bImu;
     bool fGF;
     float mPosb_x, mPosb_y, mPosb_z;
+    int epochIdx;
     //E
 
     //bool mbHasHessian;
