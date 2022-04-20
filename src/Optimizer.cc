@@ -2598,6 +2598,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     bool pr_edge = false;
 
+    vector<int> cSatIds;
     if(pr_edge){ // Vertices for GNSS
         
         //Vertex for ENU to local
@@ -2607,7 +2608,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         VT->setEstimate(mGNSSFramework->T_WG_WL);
         optimizer.addVertex(VT);
         
-        vector<int> cSatIds; // List of satellite seen in keyframes
+         // List of satellite seen in keyframes
 
         // setup reciever clock clock bias
         for(int i=0;i<N;i++){
@@ -2641,7 +2642,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         cSatIds.erase(unique(cSatIds.begin(), cSatIds.end()), cSatIds.end());
         
         for(int i=0;i<cSatIds.size();i++){
-            double satId = cSatIds[i];
+            int satId = cSatIds[i];
             double sbias_prior = mGNSSFramework->satInfo[satId].sClockBiasPrior;
             // Satellite clock bias vertex
             VertexClockBias * VSB = new VertexClockBias(sbias_prior);
@@ -2737,6 +2738,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx ++){
                 EdgePsuedorange * ePR = new EdgePsuedorange(mGNSSFramework);
                 ePR->setMeasurements(mGNSSFramework, pKFi, ep_idx, sat_idx);
+                int satId = mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId;
 
                 // Collect vertices
                 g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
@@ -2745,7 +2747,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 g2o::HyperGraph::Vertex* VA = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
                 g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
                 g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
-                g2o::HyperGraph::Vertex* VSB = optimizer.vertex(mGNSSFramework->satClockBiasID(sat_idx));
+                g2o::HyperGraph::Vertex* VSB = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
 
                 // Connect vertices to edge
                 ePR->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP));
@@ -2758,7 +2760,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
                 optimizer.addEdge(ePR);
             }
-
         }
     }
 
@@ -3056,6 +3057,23 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     pMap->IncreaseChangeIndex();
 
+    if(pr_edge){
+        mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
+
+        for(int i=0;i<N;i++){
+            KeyFrame* pKFi = vpOptimizableKFs[i];
+            if(pKFi->fGF){
+                int ep_idx = pKFi->epochIdx;
+                VertexClockBias* VRB = static_cast<VertexClockBias*>(optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx)));
+                mGNSSFramework->epochData[ep_idx].rClockBiasPrior = VRB->estimate();               
+            }
+        }
+        for(int i=0;i<cSatIds.size();i++){
+            int satId = cSatIds[i];
+            VertexClockBias* VSB = static_cast<VertexClockBias*>(optimizer.vertex(mGNSSFramework->satClockBiasID(satId)));
+            mGNSSFramework->satInfo[satId].sClockBiasPrior = VSB->estimate();
+        }
+    }
 }
 
 void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){

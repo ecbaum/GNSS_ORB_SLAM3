@@ -851,7 +851,9 @@ struct SatelliteData{
     char satSystemId;               // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
     int satId;                      // Unique satellite identifier
     double pr;                      // Psuedorange measurement
+    double dp;                      // Doppler measurement
     double prCov;                   // Covariance of psuedorange measurement
+    double dpCov;                   // Covariance of doppler measurement
     Eigen::Vector3d p_WE;           // Satellite position in {WE} frame
 };
 
@@ -965,7 +967,11 @@ class VertexClockBias : public g2o::BaseVertex<1,double>
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     VertexClockBias(double prior){
-        setEstimate(prior);
+        if(!isnan(prior)){
+            setEstimate(prior);
+        }else{
+            setEstimate(0);
+        }
     }
 
     virtual bool read(std::istream& is){return false;}
@@ -985,7 +991,15 @@ public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
     EdgeClockPrior(double _prior, double _cov){
-        mPrior = _prior;
+        /*TODO:
+            estimate covariance?
+        */
+        if(!isnan(_prior)){
+            mPrior = _prior;
+        }else{
+            mPrior = 0;
+        }
+        
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*_cov;
         setInformation(Info);
     }
@@ -1069,8 +1083,7 @@ public:
 
         gI << 0, 0, -IMU::GRAVITY_VALUE;              
         Eigen::Vector3d g = VP1->estimate().Rwb*gI;                                                // Rotate gravity vector
-
-                                                                                                  // Keyframe position translated to moment of exposure
+                                                                                                   // Keyframe position translated to moment of exposure
         const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb + VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;
         
         const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
@@ -1082,7 +1095,6 @@ public:
         _error = Eigen::Matrix<double, 1,1 > (pr_error);
     }
 };
-
 
 
 //E
