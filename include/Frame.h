@@ -164,6 +164,7 @@ public:
 
    //Erik
     bool convertToGNSS;
+    int epochIdx;
 
 private:
     //Sophus/Eigen migration

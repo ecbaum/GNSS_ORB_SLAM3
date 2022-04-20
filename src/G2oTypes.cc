@@ -885,6 +885,8 @@ bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
 
 void GNSSFramework::setupInitialization(KeyFrame * cKF){
 
+
+    // Set transform from ENU to local to identity
     Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
     Eigen::Vector3d * t_ = new Eigen::Vector3d();
 
@@ -894,7 +896,28 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
     T_WG_WL.setRotation(*static_cast<const Eigen::Quaterniond*>(r_)); 
     T_WG_WL.setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
 
+    // Set rotation and traslation from ECEF to ENU in GNSS framework
+
+    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda, deg2rad;
+    Eigen::Matrix3d R_WG_WE;
+    deg2rad = 3.141592653589793/180;
+
+    Eigen::Vector3d geodeticCoordinates = cKF->get_SPP();
+
     p_WE_WG = GeodeticToECEF(cKF->get_SPP());
+
+    phi    = geodeticCoordinates[0]*deg2rad;
+    lambda = geodeticCoordinates[1]*deg2rad;
+
+    R11 = -sin(lambda);          R12 =  cos(lambda);          R13 = 0;
+    R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
+    R31 = -cos(phi)*cos(lambda); R32 =  cos(phi)*sin(lambda); R33 = sin(phi);
+
+    R_WG_WE.row(0) << R11, R12, R13;
+    R_WG_WE.row(1) << R21, R22, R23;
+    R_WG_WE.row(2) << R31, R32, R33;
+
+    R_WE_WG = R_WG_WE.transpose();
 
     refKFId = cKF->mnId;
     bInitalized = true;
@@ -912,7 +935,7 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
     phi    = geodeticCoordinates[0]*deg2rad;
     lambda = geodeticCoordinates[1]*deg2rad;
-    h      = geodeticCoordinates[2]*deg2rad;
+    h      = geodeticCoordinates[2];
 
     N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
 
@@ -920,28 +943,13 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
     y = (N_phi + h) * cos(phi) * sin(lambda);
     z = (pow(b, 2) / pow(a, 2) * N_phi + h) * sin(phi);
 
-    Eigen::Vector3d * p_WE_gl = new Eigen::Vector3d(x, y, z);
-    return *p_WE_gl; 
+    Eigen::Vector3d * pos = new Eigen::Vector3d(x, y, z);
+    return *pos;
 }
 
 
 Eigen::Vector3d EdgeSPPToLocal::ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates){
-
-    Eigen::Matrix3d R_WG_WE;
-    double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda;
-
-    phi    = geodeticCoordinates[0];
-    lambda = geodeticCoordinates[1];
-
-    R11 = -sin(lambda);          R12 =  cos(lambda);          R13 = 0;
-    R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
-    R31 = -cos(phi)*cos(lambda); R32 =  cos(phi)*sin(lambda); R33 = sin(phi);
-
-    R_WG_WE.row(0) << R11, R12, R13;
-    R_WG_WE.row(1) << R21, R22, R23;
-    R_WG_WE.row(2) << R31, R32, R33;
-
-    p_WG_gl = R_WG_WE * (p_WE_gl - p_WE_WG); 
+    p_WG_gl = R_WE_WG.transpose() * (p_WE_gl - p_WE_WG); 
     return p_WG_gl; 
 }
 
