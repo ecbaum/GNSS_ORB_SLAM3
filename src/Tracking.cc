@@ -2209,20 +2209,20 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
-
-    if(false){ // If data is loaded
+    // eTEST1
+    if(true){ // If data is loaded
 
         // Synchronice epoch index with current frame time
-        while( mCurrentFrame.mpPrevFrame->mTimeStamp > epoch_data[epoch_idx_counter].epochTime ){epoch_idx_counter++;}
+        while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){epoch_idx_counter++;}
        
         double currentTime = mCurrentFrame.mTimeStamp;
         double prevTime = mCurrentFrame.mpPrevFrame->mTimeStamp;
-        double epochTime = epoch_data[epoch_idx_counter].epochTime;
+        double epochTime = mGNSSFramework->epochData[epoch_idx_counter].epochTime;
 
         // Associate data
         if( prevTime < epochTime && epochTime <  currentTime ){
-            epoch_data[epoch_idx_counter].gKFTime = currentTime;
-            epoch_data[epoch_idx_counter].dT = epochTime - currentTime;
+            mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
+            mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
             mCurrentFrame.convertToGNSS = true;
             epoch_idx_counter++;
@@ -3279,11 +3279,16 @@ void Tracking::CreateNewKeyFrame()
 
 
     if(mCurrentFrame.convertToGNSS){
-        pKF->setGNSS();
+        //pKF->setGNSS(mCurrentFrame.epochIdx);
 //        cout << "GNSS keyframe inserted" << endl;
-        pKF-> SPP_geodetic = SPP_geodetic; 
+
+        //eTest1
+        pKF->fGF = true;
+        pKF->timeStampGNSS = mGNSSFramework->epochData[mCurrentFrame.epochIdx].epochTime;
+        pKF->GNSS_deltaT = mGNSSFramework->epochData[mCurrentFrame.epochIdx].dT;
+
+        pKF->SPP_geodetic = SPP_geodetic; 
         SPP_geodetic.clear();  
-        pKF->epochIdx = mCurrentFrame.epochIdx;
     }
 
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
