@@ -174,6 +174,7 @@ public:
     vector<vector<double>> GNSS_data;
     int GNSS_counter;
     int frame_counter_for_GNSS;
+
     //vector<EpochData> epoch_data;
     GNSSFramework * mGNSSFramework;
     int epoch_idx_counter;

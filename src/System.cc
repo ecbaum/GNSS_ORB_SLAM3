@@ -37,10 +37,12 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include "G2oTypes.h"
 
 namespace ORB_SLAM3
 {
 vector<vector<double>> readGNSS(const string &filenames);
+vector<string> readTextFile(const string &filename);
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
 
@@ -175,7 +177,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         loadedAtlas = true;
 
         mpAtlas->CreateNewMap();
-
+        //mpTracker->mGNSSFramework = mGNSSFramework; 
         //clock_t timeElapsed = clock() - start;
         //unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
         //cout << "Binary file read in " << msElapsed << " ms" << endl;
@@ -190,33 +192,112 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     //Create Drawers. These are used by the Viewer
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
-    // Give path to GNSS file to be read. 
-    string pathGNSS = "../data/MH_01_easy/mav0/SPPGPS.csv";
-
+    
     GNSSFramework * mGNSSFramework = new GNSSFramework();
 
+    // Give path to GNSS file to be read. 
+    string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
+    string pathGNSSMessages = "../data/MH_01_easy/mav0/GNSS_Messages.csv";
+    string pathSatPosStart = "../data/MH_01_easy/mav0/SatPosFolder/res_";
+    string pathSatIdsList = "../data/MH_01_easy/mav0/SatIds.csv";
+    vector<string> SatIdsList = readTextFile(pathSatIdsList);
+    vector<vector<double>> SatPos_;
+    vector<vector<double>> GNSSData;
+
+struct rawSatData{
+    int satId;
+    vector<vector<double>> rawData;
+};
+
+    
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
-    mpTracker->GNSS_data = readGNSS(pathGNSS); //Loading GNSSdata to tracker. 
-    /* TODO:
-        read psuedorange data 
 
-        std::vector<EpochData> epochdata;
+    mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
 
-        for data_iter in gnss data:
-            epoch_iter = new EpochData;
+    vector<rawSatData> SatPos;
 
-            insert data from data_iter to epoch_data
-             
-            epochdata.push_back(epoch_iter);
+    GNSSData = readGNSS(pathGNSSMessages);
+
+    for( int i = 0; i < SatIdsList.size(); i ++){
+        rawSatData s_;
+        
+        SatPos_ = (readGNSS(pathSatPosStart+SatIdsList[i]+".csv"));
+        s_.rawData = SatPos_;
+        SatIdsList[i].erase(remove(SatIdsList[i].begin(), SatIdsList[i].end(), 'G'), SatIdsList[i].end());
+        s_.satId = std::stoi(SatIdsList[i]);
+
+        SatPos.push_back(s_);
 
 
+        SatelliteInfo satelliteInfo;
+        satelliteInfo.satId = s_.satId;
+        satelliteInfo.sClockBiasPrior =0.0;
+        mGNSSFramework->satInfo.push_back(satelliteInfo);
+    }
 
-    */
+    int i = 0;
+    for( int j =1; j< GNSSData.back()[0];j++){
+        EpochData epochData;
+        epochData.epochIdx = j;
+        epochData.epochTime = GNSSData[j][1];
 
+        vector<SatelliteData> satDataVec;
+
+        while(GNSSData[i][0] == j){
+            SatelliteData satelliteData;
+
+            satelliteData.pr = GNSSData[i][3];
+            satelliteData.prStdv = GNSSData[i][5];
+            satelliteData.satId= GNSSData[i][2];
+
+            bool doubleBreak = false;
+            for(int k = 0; k<SatPos.size();k++){
+                if (SatPos[k].satId == satelliteData.satId){
+
+                    for(int l = 0; l< SatPos[k].rawData.size();l++) {
+
+                        if(SatPos[k].rawData[l][0]== epochData.epochTime) {
+                           
+                        std::vector<double> a = std::vector<double>(SatPos[k].rawData[j].begin() + 1, SatPos[k].rawData[j].end());
+                        Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+
+                        satelliteData.p_WE = p_WE_;
+
+                        doubleBreak = true;
+                        break;  
+                        }   
+                    }
+                }
+                if(doubleBreak){break;}
+            }
+            satDataVec.push_back(satelliteData);
+            i++;
+        }
+        epochData.satData = satDataVec;
+        mGNSSFramework->epochData.push_back(epochData);
+    }   
+
+
+/*
+    for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
+        cout << endl;
+        cout << endl;
+        cout<< " epoch idx: "<< mGNSSFramework->epochData[i].epochIdx<< " Time: " << mGNSSFramework->epochData[i].epochTime << " "<< endl;
+        for(int j = 0; j< mGNSSFramework->epochData[i].satData.size(); j++){
+            cout << "satid: " << mGNSSFramework->epochData[i].satData[j].satId << endl;
+            cout << "pr: " << mGNSSFramework->epochData[i].satData[j].pr << endl;
+            cout << "pos: " << mGNSSFramework->epochData[i].satData[j].p_WE << endl;
+
+        }
+
+
+    }
+
+*/
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
@@ -1575,19 +1656,17 @@ string System::CalculateCheckSum(string filename, int type)
     return checksum;
 }
 
-
-//Martin GNSS
-
 vector<vector<double>> readGNSS(const string &filename )
 {
     std::ifstream f;
-    std::cout << "reading csv file \n";
+    //std::cout << "reading csv file \n";
 
     f.open (filename.c_str());   /* open file with filename as argument */
     if (! f.is_open()) {    /* validate file open for reading */
         std::cerr << "error: file open failed.\n";
+        std::cerr << filename << endl;
     }
-
+    f.ignore(std::numeric_limits<std::streamsize>::max(), '\n');//Ignores first line
     std::string line, val;                  /* string for line & value */
     std::vector<std::vector<double>> array;    /* vector of vector<int>  */
 
@@ -1601,7 +1680,23 @@ vector<vector<double>> readGNSS(const string &filename )
        return array; 
 }
 
-
+vector<string> readTextFile(const string &filename)
+{
+    fstream newfile;
+    newfile.open(filename,ios::in); //open a file to perform read operation using file object
+    if (newfile.is_open()){ //checking whether the file is open
+        string tp;
+        vector<string> res;
+         newfile.ignore(std::numeric_limits<std::streamsize>::max(), '\n'); //Ignores first line
+        while(getline(newfile, tp)){ //read data from file object and put it into string.
+            //cout << tp << "\n"; //print the data of the string
+            res.push_back(tp);
+        }
+    return res;
+    newfile.close(); //close the file object.
+   
+    }
+}
 
 
 
