@@ -1199,14 +1199,7 @@ void KeyFrame::SetKeyFrameDatabase(KeyFrameDatabase* pKFDB)
 
 
 void KeyFrame::setGNSS(){
-    fGF = true;
-    timeStampGNSS = mTimeStamp - 0.01*0.33; // Test offset of 1/3 time distance to last frame
-    GNSS_deltaT = mTimeStamp - timeStampGNSS;
-
-    /*
-        TODO: Link epoch to this KF
-              Link this KF to epoch
-    */
+//Not used. Frame values set manually in tracking::CreateNewKeyFrame()
 
 }
 
@@ -1219,7 +1212,7 @@ void KeyFrame::IntegrateToGNSS(){
 
     mpImuPreintegratedToGNSS = new IMU::Preintegrated(mImuBias,mImuCalib);
 
-    std::cout << "Integration from current keyframe to GNSS node" << std::endl;
+    std::cout << "Integration from current keyframe to GNSS epoch" << std::endl;
 
     double deltat_sum = 0;
     float t_step_diff = 0;
@@ -1235,7 +1228,7 @@ void KeyFrame::IntegrateToGNSS(){
         }else{ //Integrate the rest
             deltat_sum += tstep; //Remove last step
             t_step_diff = GNSS_deltaT - deltat_sum; //Integrate the rest
-            mpImuPreintegratedToGNSS->IntegrateNewMeasurement(acc,angVel,-t_step_diff);
+            mpImuPreintegratedToGNSS->IntegrateNewMeasurement(acc,angVel,t_step_diff);
         }
     }
 }
