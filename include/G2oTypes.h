@@ -848,17 +848,18 @@ public:
 Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates);
 
 struct SatelliteData{
-    char satSystemId;               // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
+    //char satSystemId;               // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
     int satId;                      // Unique satellite identifier
     double pr;                      // Psuedorange measurement
+    double prStdv;
     double dp;                      // Doppler measurement
     double prCov;                   // Covariance of psuedorange measurement
     double dpCov;                   // Covariance of doppler measurement
-    Eigen::Vector3d p_WE;           // Satellite position in {WE} frame
+    Eigen::Vector3d p_WE;           // Satellite position in {WE} frame [KM]
 };
 
 struct SatelliteInfo{
-    char satSystemId;
+    //char satSystemId;
     int satId;                      // Unique satellite identifier
     double sClockBiasPrior;         // Prior estimate of satellite clock bias 
 };
