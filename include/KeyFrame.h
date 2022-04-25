@@ -439,6 +439,7 @@ public:
     double timeStampGNSS;
     double GNSS_deltaT;
     bool bImu;
+    bool fSPPF;
     bool fGF;
     float mPosb_x, mPosb_y, mPosb_z;
     int epochIdx;

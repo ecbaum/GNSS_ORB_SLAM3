@@ -883,6 +883,7 @@ public:
         initOptThreshold = 3;
         KeyFrameThreshold = 4;
         bInitalized = false;
+        finishedInitOp = false;
     }
 
     void setupInitialization(KeyFrame * cKF);
@@ -903,7 +904,7 @@ public:
     const Eigen::Vector3d p_b_g;
     g2o::SE3Quat T_WG_WL;       // Transformation from ground to local
     bool bInitalized;
-
+    bool finishedInitOp;
     int mnId = 10000;  
 
     // Optimizer vertex ID for reciever and satellite clock biases

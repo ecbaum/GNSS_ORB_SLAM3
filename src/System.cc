@@ -242,9 +242,8 @@ struct rawSatData{
     int i = 0;
     for( int j =1; j< GNSSData.back()[0];j++){
         EpochData epochData;
-        epochData.epochIdx = j;
-        epochData.epochTime = GNSSData[j][1];
 
+        epochData.epochIdx = j;
         vector<SatelliteData> satDataVec;
 
         while(GNSSData[i][0] == j){
@@ -275,13 +274,12 @@ struct rawSatData{
                 if(doubleBreak){break;}
             }
             satDataVec.push_back(satelliteData);
+            epochData.epochTime = GNSSData[i][1];
             i++;
         }
         epochData.satData = satDataVec;
         mGNSSFramework->epochData.push_back(epochData);
     }   
-
-
 /*
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
         cout << endl;
@@ -296,13 +294,14 @@ struct rawSatData{
 
 
     }
-
 */
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
 
+    
     mpLocalMapper->mGNSSFramework = mGNSSFramework;
+    mpTracker->mGNSSFramework = mGNSSFramework;
 
     mptLocalMapping = new thread(&ORB_SLAM3::LocalMapping::Run,mpLocalMapper);
     mpLocalMapper->mInitFr = initFr;

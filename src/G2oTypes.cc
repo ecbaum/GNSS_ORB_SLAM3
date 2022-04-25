@@ -865,12 +865,19 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 //Methods
 
 bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
-
+        cout<< "Checkpoint: C1" << endl;
     //todo: detect map reset?
-
-
-    if(!cKF->fGF){return false;}
-
+    /*
+    if(initOptCounter >= initOptThreshold){
+        finishedInitOp = true;
+        return false;
+        }
+*/
+    if(!cKF->fSPPF){
+        cout<< "Checkpoint: C2" << endl;
+        return false;
+        }
+    
     if(N_GKF > KeyFrameThreshold){
         if(!bInitalized){setupInitialization(cKF);}
         cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
@@ -885,6 +892,7 @@ bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
 
 void GNSSFramework::setupInitialization(KeyFrame * cKF){
 
+    cout<< "Checkpoint: D1" << endl;
 
     // Set transform from ENU to local to identity
     Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
@@ -901,10 +909,22 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
     double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda, deg2rad;
     Eigen::Matrix3d R_WG_WE;
     deg2rad = 3.141592653589793/180;
-
+    cout<< "Checkpoint: D2" << endl;
+    if(cKF->fSPPF){
+        cout<< "Checkpoint: Har SPP flaggan" << endl;
+        try{
+            cout << "get_SPP(): " << cKF->get_SPP() << endl;
+            }
+            catch(int e){
+                cout << "Kunde inte printa SPP... :::" << endl;
+            }
+    }
     Eigen::Vector3d geodeticCoordinates = cKF->get_SPP();
 
-    p_WE_WG = GeodeticToECEF(cKF->get_SPP());
+        cout<< "Checkpoint: D21" << endl;
+
+    p_WE_WG = GeodeticToECEF(geodeticCoordinates);
+    cout<< "Checkpoint: D3" << endl;
 
     phi    = geodeticCoordinates[0]*deg2rad;
     lambda = geodeticCoordinates[1]*deg2rad;
@@ -921,6 +941,8 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
 
     refKFId = cKF->mnId;
     bInitalized = true;
+    cout<< "Checkpoint: D4" << endl;
+
 }
 
 

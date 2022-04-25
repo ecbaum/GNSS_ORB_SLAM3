@@ -163,7 +163,9 @@ public:
     }
 
    //Erik
+    bool convertToGNSSSpp;
     bool convertToGNSS;
+
     int epochIdx;
 
 private:

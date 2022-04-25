@@ -96,6 +96,7 @@ Frame::Frame(const Frame &frame)
     mTimeORB_Ext = frame.mTimeORB_Ext;
 #endif
 convertToGNSS = false;
+convertToGNSSSpp = false;
 }
 
 

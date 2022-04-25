@@ -91,6 +91,7 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
         mbHasVelocity = true;
     }
     fGF = false;
+    fSPPF = false;
     mImuBias = F.mImuBias;
     SetPose(F.GetPose());
     mnOriginMapId = pMap->GetId();
@@ -1234,9 +1235,16 @@ void KeyFrame::IntegrateToGNSS(){
 }
 
 Eigen::Vector3d KeyFrame::get_SPP(){
+    
+    if(SPP_geodetic[0]){
+        cout << "SPP_geodetic finns: " <<  SPP_geodetic[0] << endl;
+    }
+    else{
+        cout << "Finns EJ" << endl;
+    }
 
     std::vector<double> a = std::vector<double>(SPP_geodetic.begin() + 2, SPP_geodetic.end());
-
+    cout << "A_size: " << a.size() <<  endl;
     Eigen::Vector3d v = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
     
     return v;
