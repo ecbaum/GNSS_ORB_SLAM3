@@ -175,6 +175,7 @@ Frame::Frame(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timeSt
 
     mb = mbf/fx;
     convertToGNSS = false;
+    convertToGNSSSpp = false;
     if(pPrevF)
     {
         if(pPrevF->HasVelocity())
@@ -228,6 +229,7 @@ Frame::Frame(const cv::Mat &imGray, const cv::Mat &imDepth, const double &timeSt
     mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
 #endif
         convertToGNSS = false;
+        convertToGNSSSpp = false;
 
     N = mvKeys.size();
 
@@ -317,6 +319,7 @@ Frame::Frame(const cv::Mat &imGray, const double &timeStamp, ORBextractor* extra
     mTimeORB_Ext = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndExtORB - time_StartExtORB).count();
 #endif
         convertToGNSS = false;
+        convertToGNSSSpp = false;
 
     N = mvKeys.size();
     if(mvKeys.empty())

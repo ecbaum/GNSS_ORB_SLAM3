@@ -44,7 +44,7 @@ namespace ORB_SLAM3
 vector<vector<double>> readGNSS(const string &filenames);
 vector<string> readTextFile(const string &filename);
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_NORMAL;
+Verbose::eLevel Verbose::th = Verbose::VERBOSITY_DEBUG;
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence):
@@ -244,6 +244,7 @@ struct rawSatData{
         EpochData epochData;
 
         epochData.epochIdx = j;
+        epochData.rClockBiasPrior = 0.0;
         vector<SatelliteData> satDataVec;
 
         while(GNSSData[i][0] == j){
@@ -413,7 +414,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         }
         else if(mbResetActiveMap)
         {
-            mpTracker->ResetActiveMap();
+            //mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -488,7 +489,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         }
         else if(mbResetActiveMap)
         {
-            mpTracker->ResetActiveMap();
+            //mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -564,7 +565,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
         else if(mbResetActiveMap)
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            mpTracker->ResetActiveMap();
+            //mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -1478,7 +1479,7 @@ void System::ChangeDataset()
 {
     if(mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
     {
-        mpTracker->ResetActiveMap();
+        //mpTracker->ResetActiveMap();
     }
     else
     {

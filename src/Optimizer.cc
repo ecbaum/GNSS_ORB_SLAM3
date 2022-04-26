@@ -2398,18 +2398,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     }
     //const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
     const int Nd = (int)pCurrentMap->KeyFramesInMap();
-    cout<< "Checkpoin: A1" << endl;
-    cout << "Nd" << Nd <<endl;
     const unsigned long maxKFid = pKF->mnId;
-    cout<< "Checkpoin: A2" << endl;
     vector<KeyFrame*> vpOptimizableKFs;
     const vector<KeyFrame*> vpNeighsKFs = pKF->GetVectorCovisibleKeyFrames();
     list<KeyFrame*> lpOptVisKFs;
-    cout<< "Checkpoin: A3" << endl;
     vpOptimizableKFs.reserve(Nd);
     vpOptimizableKFs.push_back(pKF);
     pKF->mnBALocalForKF = pKF->mnId;
-    cout<< "Checkpoin: A4" << endl;
     for(int i=1; i<Nd; i++)
     {
         if(vpOptimizableKFs.back()->mPrevKF)
@@ -2420,12 +2415,10 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         else
             break;
     }
-    cout<< "Checkpoin: A5" << endl;
     int N = vpOptimizableKFs.size();
 
     // Optimizable points seen by temporal optimizable keyframes
     list<MapPoint*> lLocalMapPoints;
-    cout<< "Checkpoin: A6" << endl;
     for(int i=0; i<N; i++)
     {
         vector<MapPoint*> vpMPs = vpOptimizableKFs[i]->GetMapPointMatches();
@@ -2441,7 +2434,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                     }
         }
     }
-    cout<< "Checkpoin: A7" << endl;
     // Fixed Keyframe: First frame previous KF to optimization window)
     list<KeyFrame*> lFixedKeyFrames;
     if(vpOptimizableKFs.back()->mPrevKF)
@@ -2456,7 +2448,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         lFixedKeyFrames.push_back(vpOptimizableKFs.back());
         vpOptimizableKFs.pop_back();
     }
-    cout<< "Checkpoin: A8" << endl;
     // Optimizable visual KFs
     const int maxCovKF = 0;
     for(int i=0, iend=vpNeighsKFs.size(); i<iend; i++)
@@ -2597,34 +2588,29 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             optimizer.addVertex(VA);
         }
     }
-    cout<< "Checkpoin: A9" << endl;
     bool pr_edge = false;
     //eTest2
     vector<int> cSatIds;
-    if(false){ // Vertices for GNSS
-        
+    //if(mGNSSFramework->finishedInitOp){ // Vertices for GNSS
+     if(false){
         //Vertex for ENU to local
-
         g2o::VertexSE3Expmap * VT = new g2o::VertexSE3Expmap();
         VT->setId(mGNSSFramework->mnId);
         VT->setEstimate(mGNSSFramework->T_WG_WL);
         optimizer.addVertex(VT);
-        
          // List of satellite seen in keyframes
 
         // setup reciever clock clock bias
         for(int i=0;i<N;i++){
             KeyFrame* pKFi = vpOptimizableKFs[i];
             if(pKFi->fGF){
-
+                //cout << "Keyframe ID: " << pKFi->mnId << endl;
                 // Reciever clock bias vertex
                 int ep_idx = pKFi->epochIdx;
                 double rbias_prior = mGNSSFramework->epochData[ep_idx].rClockBiasPrior;
-                
                 VertexClockBias * VRB = new VertexClockBias(rbias_prior);
                 VRB->setId(mGNSSFramework->recClockBiasID(ep_idx));
                 optimizer.addVertex(VRB);
-                
                 // Reciever bias prior edge
                 g2o::HyperGraph::Vertex* VRB_ = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
                 EdgeClockPrior * ERP = new EdgeClockPrior(rbias_prior, 1);
@@ -2639,24 +2625,41 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             }
         }
         //eTest3
-        /*
+        
         // Keep unique satellite IDs
+
         sort(cSatIds.begin(), cSatIds.end());
         cSatIds.erase(unique(cSatIds.begin(), cSatIds.end()), cSatIds.end());
         
-        for(int i=0;i<cSatIds.size();i++){
-            int satId = cSatIds[i];
-            double sbias_prior = mGNSSFramework->satInfo[satId].sClockBiasPrior;
+        for(int ii=0;ii<cSatIds.size();ii++){
+
+            int satId = cSatIds[ii];
+            double sbias_prior;
+
+
+            for(int j = 0; j < cSatIds.size(); j++){
+                   if( mGNSSFramework->satInfo[j].satId == satId){
+                    sbias_prior = mGNSSFramework->satInfo[j].sClockBiasPrior;
+                   }
+
+            }
+
             // Satellite clock bias vertex
+
+
             VertexClockBias * VSB = new VertexClockBias(sbias_prior);
+
             VSB->setId(mGNSSFramework->satClockBiasID(satId));
             optimizer.addVertex(VSB);    
-            
+
             // Satellite bias prior edge
+
             g2o::HyperGraph::Vertex* VSB_ = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
             EdgeClockPrior * ESP = new EdgeClockPrior(sbias_prior, 1);
             ESP->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VSB_));
-        }*/
+
+        }
+        
     }   
 
 
@@ -3023,7 +3026,15 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(int i=0; i<N; i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-
+       /* IMU::Bias kfBias = pKFi->GetImuBias();
+        cout<< "kfbias ax: " << kfBias.bax << endl;
+        cout<< "kfbias ay: " << kfBias.bay << endl;
+        cout<< "kfbias az: " << kfBias.baz << endl;
+        cout<< "kfbias gx: " << kfBias.bwx << endl;
+        cout<< "kfbias gy: " << kfBias.bwy << endl;
+        cout<< "kfbias gz: " << kfBias.bwz << endl;
+        
+*/
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
         pKFi->SetPose(Tcw);
@@ -3080,7 +3091,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             mGNSSFramework->satInfo[satId].sClockBiasPrior = VSB->estimate();
         }
     }*/
-    cout<< "Checkpoin: AEND" << endl;
 }
 
 void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
@@ -3118,14 +3128,12 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
         KeyFrame* pKFi = vpOptimizableKFs[i];
         if(pKFi->fSPPF){gKFcounter++;}
     }
-    cout<< "Checkpoint: B1" << endl;
 
     if(!mGNSSFramework->checkInitialization(gKFcounter, pKF)){return;} // Check if initialization has to run
-    cout<< "Checkpoint: B2" << endl;
 
     // Set up optimizer
     g2o::SparseOptimizer optimizer;
-    //optimizer.setVerbose(true);
+    //optimizer.setVerbose(false);
 
     g2o::BlockSolverX::LinearSolverType * linearSolver;
     linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
@@ -3258,6 +3266,8 @@ Eigen::MatrixXd Optimizer::Marginalize(const Eigen::MatrixXd &H, const int &star
 
 void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &scale, Eigen::Vector3d &bg, Eigen::Vector3d &ba, bool bMono, Eigen::MatrixXd  &covInertial, bool bFixedVel, bool bGauss, float priorG, float priorA)
 {
+    cout << "InertialOptimization Start:" << endl;
+    Verbose::SetTh(Verbose::VERBOSITY_DEBUG);
     Verbose::PrintMess("inertial optimization", Verbose::VERBOSITY_NORMAL);
     int its = 200;
     long unsigned int maxKFid = pMap->GetMaxKFid();
@@ -3400,6 +3410,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
     optimizer.optimize(its);
 
     scale = VS->estimate();
+    cout << "Scale : " <<scale<< endl;
 
     // Recover optimized data
     // Biases

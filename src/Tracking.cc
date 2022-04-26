@@ -1818,7 +1818,7 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-        mpSystem->ResetActiveMap();
+        //mpSystem->ResetActiveMap();
         return;
     }
 
@@ -1839,7 +1839,8 @@ void Tracking::Track()
             return;
         }
         else if(mCurrentFrame.mTimeStamp>mLastFrame.mTimeStamp+1.0)
-        {
+        {   
+            cout << "--------------------------------------DETTA BORDE ALDRIG HÄNDA----------------------------------------------------"<< endl;
             // cout << mCurrentFrame.mTimeStamp << ", " << mLastFrame.mTimeStamp << endl;
             // cout << "id last: " << mLastFrame.mnId << "    id curr: " << mCurrentFrame.mnId << endl;
             if(mpAtlas->isInertial())
@@ -1850,7 +1851,7 @@ void Tracking::Track()
                     cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
                     if(!pCurrentMap->GetIniertialBA2())
                     {
-                        mpSystem->ResetActiveMap();
+                        //mpSystem->ResetActiveMap();
                     }
                     else
                     {
@@ -1860,7 +1861,7 @@ void Tracking::Track()
                 else
                 {
                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
-                    mpSystem->ResetActiveMap();
+                    //mpSystem->ResetActiveMap();
                 }
                 return;
             }
@@ -2031,7 +2032,7 @@ void Tracking::Track()
 
                     if (pCurrentMap->KeyFramesInMap()<10)
                     {
-                        mpSystem->ResetActiveMap();
+                        //mpSystem->ResetActiveMap();
                         Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
                     }else
                         CreateMapInAtlas();
@@ -2132,7 +2133,7 @@ void Tracking::Track()
 #ifdef REGISTER_TIMES
         std::chrono::steady_clock::time_point time_StartLMTrack = std::chrono::steady_clock::now();
 #endif
-        // If we have an initial estimation of the camera pose and matching. Track the local map.
+        // If we have an initial estimation of the camera pose and matching. Track the local map.   
         if(!mbOnlyTracking)
         {
             if(bOK)
@@ -2162,7 +2163,7 @@ void Tracking::Track()
                 if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-                    mpSystem->ResetActiveMap();
+                    //mpSystem->ResetActiveMap();
                 }
 
                 mState=RECENTLY_LOST;
@@ -2230,7 +2231,7 @@ void Tracking::Track()
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
-            mCurrentFrame.convertToGNSS = true;
+            mCurrentFrame.convertToGNSS = false;
             epoch_idx_counter++;
         }
 
@@ -2241,7 +2242,7 @@ void Tracking::Track()
 
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = true;
+            mCurrentFrame.convertToGNSSSpp = false;
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
@@ -2305,11 +2306,7 @@ void Tracking::Track()
                 CreateNewKeyFrame(); 
                 }
             }
-            // Check if we need to insert a new keyframe
-            // if(bNeedKF && bOK)
-            //if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
-            //                       (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
-            //    CreateNewKeyFrame();
+
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -2334,14 +2331,14 @@ void Tracking::Track()
         {
             if(pCurrentMap->KeyFramesInMap()<=10)
             {
-                mpSystem->ResetActiveMap();
+                //mpSystem->ResetActiveMap();
                 return;
             }
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 if (!pCurrentMap->isImuInitialized())
                 {
                     Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                    mpSystem->ResetActiveMap();
+                    //mpSystem->ResetActiveMap();
                     return;
                 }
 
@@ -2650,7 +2647,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
-        mpSystem->ResetActiveMap();
+        //mpSystem->ResetActiveMap();
         return;
     }
 
@@ -3088,12 +3085,15 @@ bool Tracking::TrackLocalMap()
     // Decide if the tracking was succesful
     // More restrictive if there was a relocalization recently
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
+    
+
+    cout << "MatchesInliers: " << mnMatchesInliers << endl;
+
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
         return false;
 
     if((mnMatchesInliers>10)&&(mState==RECENTLY_LOST))
         return true;
-
 
     if (mSensor == System::IMU_MONOCULAR)
     {
@@ -3120,6 +3120,8 @@ bool Tracking::TrackLocalMap()
         else
             return true;
     }
+    
+   return true;
 }
 
 bool Tracking::NeedNewKeyFrame()
@@ -3290,6 +3292,7 @@ void Tracking::CreateNewKeyFrame()
         pKF->fGF = true;
         pKF->timeStampGNSS = mGNSSFramework->epochData[mCurrentFrame.epochIdx].epochTime;
         pKF->GNSS_deltaT = mGNSSFramework->epochData[mCurrentFrame.epochIdx].dT;
+        pKF->epochIdx = mCurrentFrame.epochIdx;
     }
 
     if(mCurrentFrame.convertToGNSSSpp){

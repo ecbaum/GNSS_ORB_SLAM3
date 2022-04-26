@@ -77,6 +77,8 @@ void Atlas::CreateNewMap()
     mpCurrentMap = new Map(mnLastInitKFidMap);
     mpCurrentMap->SetCurrentMap();
     mspMaps.insert(mpCurrentMap);
+    
+   cout << "Tried to create new map" << endl;
 }
 
 void Atlas::ChangeMap(Map* pMap)
