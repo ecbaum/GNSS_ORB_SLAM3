@@ -2231,7 +2231,7 @@ void Tracking::Track()
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
-            mCurrentFrame.convertToGNSS = false;
+            mCurrentFrame.convertToGNSS = true;
             epoch_idx_counter++;
         }
 
@@ -2242,7 +2242,7 @@ void Tracking::Track()
 
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = false;
+            mCurrentFrame.convertToGNSSSpp = true;
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
