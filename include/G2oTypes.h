@@ -905,11 +905,11 @@ public:
     g2o::SE3Quat T_WG_WL;       // Transformation from ground to local
     bool bInitalized;
     bool finishedInitOp;
-    int mnId = 10000;  
+    int mnId = 10000000;  
 
     // Optimizer vertex ID for reciever and satellite clock biases
     int recClockBiasID(int epochIdx){return mnId + 1 + epochIdx;}
-    int satClockBiasID(int satId){2*mnId + satId;} // Currently only supports one system
+    int satClockBiasID(int satId){return 2*mnId + satId;} // Currently only supports one system
 
 };
 
@@ -955,10 +955,11 @@ public:
         const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
         _error << p_WG_gl - TF->estimate().map(p_WL_gl);
 
-
+        /*
         cout << "   -init error:   ";
         for(int i=0;i<3;i++){ cout <<  _error[i] << "    "; }
         cout << endl;
+        */
 
     }
 };  

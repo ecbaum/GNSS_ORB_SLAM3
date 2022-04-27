@@ -137,12 +137,13 @@ void LocalMapping::Run()
                         if(!mpCurrentKeyFrame->GetMap()->GetIniertialBA2())
                         {
                             if((mTinit<10.f) && (dist<0.02))
-                            {
+                            {   
                                 cout << "Not enough motion for initializing. Reseting..." << endl;
                                 unique_lock<mutex> lock(mMutexReset);
                                 mbResetRequestedActiveMap = true;
                                 mpMapToReset = mpCurrentKeyFrame->GetMap();
                                 mbBadImu = true;
+
                             }
                         }
 
@@ -1181,6 +1182,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     int nMinKF;
     if (mbMonocular)
     {
+        cout << "mbMonocular: " << endl;
         minTime = 2.0;
         nMinKF = 10;
     }
@@ -1191,9 +1193,12 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     }
 
 
-    if(mpAtlas->KeyFramesInMap()<nMinKF)
+    if(mpAtlas->KeyFramesInMap()<nMinKF){
+        cout << "Too few KFs in map:  " <<mpAtlas->KeyFramesInMap() <<  endl;
         return;
-
+    }
+     cout << "Enough KFs in map" << endl;
+     cout << "Checkpoint LM 1: "<< endl;
     // Retrieve all keyframe in temporal order
     list<KeyFrame*> lpKF;
     KeyFrame* pKF = mpCurrentKeyFrame;
@@ -1205,13 +1210,17 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     lpKF.push_front(pKF);
     vector<KeyFrame*> vpKF(lpKF.begin(),lpKF.end());
 
-    if(vpKF.size()<nMinKF)
+    if(vpKF.size()<nMinKF){
+         cout << " vpKF.size()<nMinKF "<< endl;
         return;
+        }
+    cout << "Checkpoint LM 2: "<< endl;
 
     mFirstTs=vpKF.front()->mTimeStamp;
-    if(mpCurrentKeyFrame->mTimeStamp-mFirstTs<minTime)
+    if(mpCurrentKeyFrame->mTimeStamp-mFirstTs<minTime){
+    cout << "Too short time: " << endl;
         return;
-
+    }
     bInitializing = true;
 
     while(CheckNewKeyFrames())
@@ -1227,6 +1236,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     // Compute and KF velocities mRwg estimation
     if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
     {
+        cout << "Compute and KF velocities mRwg estimation" << endl;
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -1244,15 +1254,18 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         }
 
         dirG = dirG/dirG.norm();
+        cout << "Direction G: " << dirG << endl;
         Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
+        cout << "Direction G norm: " << v << endl;
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
         Eigen::Vector3f vzg = v*ang/nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
+        cout << "RwG: " << mRwg << endl;
     }
     else
     {
