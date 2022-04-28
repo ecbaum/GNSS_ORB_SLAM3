@@ -890,7 +890,6 @@ public:
     bool checkInitialization(int N_KF, KeyFrame * cKF);
     void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
     g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
-
     vector<EpochData> epochData;
     vector<SatelliteInfo> satInfo; // Currently: satInfo[idx].satId = idx;
 

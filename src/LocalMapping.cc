@@ -1236,7 +1236,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     // Compute and KF velocities mRwg estimation
     if (!mpCurrentKeyFrame->GetMap()->isImuInitialized())
     {
-        cout << "Compute and KF velocities mRwg estimation" << endl;
+        //cout << "Compute and KF velocities mRwg estimation" << endl;
         Eigen::Matrix3f Rwg;
         Eigen::Vector3f dirG;
         dirG.setZero();
@@ -1254,18 +1254,15 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         }
 
         dirG = dirG/dirG.norm();
-        cout << "Direction G: " << dirG << endl;
         Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
-        cout << "Direction G norm: " << v << endl;
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
         Eigen::Vector3f vzg = v*ang/nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
-        cout << "RwG: " << mRwg << endl;
     }
     else
     {

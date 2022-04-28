@@ -2212,7 +2212,7 @@ void Tracking::Track()
 #endif
 
     // eTEST1
-    if(true){ // If data is loaded
+    //if(true){ // If data is loaded
 
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
@@ -2235,7 +2235,7 @@ void Tracking::Track()
             epoch_idx_counter++;
         }
 
-    }
+  //  }
 
 
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
@@ -2911,7 +2911,7 @@ void Tracking::UpdateLastFrame()
 
 bool Tracking::TrackWithMotionModel()
 {
-    ORBmatcher matcher(0.9,true);
+    ORBmatcher matcher(0.9,true); // GNSS stod 0.9 innan. Martin
 
     // Update last frame pose according to its reference keyframe
     // Create "visual odometry" points if in Localization Mode
@@ -3087,7 +3087,7 @@ bool Tracking::TrackLocalMap()
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
     
 
-    cout << "MatchesInliers: " << mnMatchesInliers << endl;
+    //cout << "MatchesInliers: " << mnMatchesInliers << endl;
 
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
         return false;
@@ -3290,6 +3290,7 @@ void Tracking::CreateNewKeyFrame()
   if(mCurrentFrame.convertToGNSS){
         //eTest1
         pKF->fGF = true;
+        pKF->SetNotErase();
         pKF->timeStampGNSS = mGNSSFramework->epochData[mCurrentFrame.epochIdx].epochTime;
         pKF->GNSS_deltaT = mGNSSFramework->epochData[mCurrentFrame.epochIdx].dT;
         pKF->epochIdx = mCurrentFrame.epochIdx;
@@ -3299,6 +3300,7 @@ void Tracking::CreateNewKeyFrame()
 
         //eTest1
         pKF->fSPPF = true;
+        pKF->SetNotErase();
         pKF->SPP_geodetic = SPP_geodetic; 
         SPP_geodetic.clear();  
     }

@@ -44,7 +44,7 @@ namespace ORB_SLAM3
 vector<vector<double>> readGNSS(const string &filenames);
 vector<string> readTextFile(const string &filename);
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_DEBUG;
+Verbose::eLevel Verbose::th = Verbose::VERBOSITY_QUIET; //GNSS setVerbose , setVerbosity , verboseTh
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence):

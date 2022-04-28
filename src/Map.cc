@@ -105,25 +105,27 @@ void Map::EraseMapPoint(MapPoint *pMP)
 }
 
 void Map::EraseKeyFrame(KeyFrame *pKF)
-{
-    unique_lock<mutex> lock(mMutexMap);
-    mspKeyFrames.erase(pKF);
-    if(mspKeyFrames.size()>0)
-    {
-        if(pKF->mnId == mpKFlowerID->mnId)
+{   if(!pKF->fGF || !pKF->fSPPF){
+        cout << " Keyframe med fGF flaggan" << endl;
+        unique_lock<mutex> lock(mMutexMap);
+        mspKeyFrames.erase(pKF);
+        if(mspKeyFrames.size()>0)
         {
-            vector<KeyFrame*> vpKFs = vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
-            sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
-            mpKFlowerID = vpKFs[0];
+            if(pKF->mnId == mpKFlowerID->mnId)
+            {
+                vector<KeyFrame*> vpKFs = vector<KeyFrame*>(mspKeyFrames.begin(),mspKeyFrames.end());
+                sort(vpKFs.begin(),vpKFs.end(),KeyFrame::lId);
+                mpKFlowerID = vpKFs[0];
+            }
         }
-    }
-    else
-    {
-        mpKFlowerID = 0;
-    }
+        else
+        {
+            mpKFlowerID = 0;
+        }
 
-    // TODO: This only erase the pointer.
-    // Delete the MapPoint
+        // TODO: This only erase the pointer.
+        // Delete the MapPoint
+    }
 }
 
 void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
