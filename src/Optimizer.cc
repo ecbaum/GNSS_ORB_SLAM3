@@ -2755,7 +2755,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         if(pKFi->fGF && mGNSSFramework->finishedInitOp){
             //cout << "Checkpoint 1:  " << endl; 
             int ep_idx = pKFi->epochIdx;
-           // cout << "Checkpoint 2:  " << endl; 
 
             for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx ++){
 
@@ -2765,18 +2764,18 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 
                 int satId = mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId;
                 // Collect vertices
+                g2o::HyperGraph::Vertex* VV = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
                 g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
-                g2o::HyperGraph::Vertex* VVr = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
-                g2o::HyperGraph::Vertex* VGr = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
-                g2o::HyperGraph::Vertex* VAr = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
-                g2o::HyperGraph::Vertex* VTr = optimizer.vertex(mGNSSFramework->mnId);
-                g2o::HyperGraph::Vertex* VRBr = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
-                g2o::HyperGraph::Vertex* VSBr = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
+                g2o::HyperGraph::Vertex* VG = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
+                g2o::HyperGraph::Vertex* VA = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
+                g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
+                g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
+                g2o::HyperGraph::Vertex* VSB = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
 
                // cout << "Checkpoint vertex skapade:  " << endl; 
-                if( !VP || !VVr || !VGr || !VAr || !VTr || !VRBr || !VSBr ||!ePR)
+                if( !VP || !VV || !VG || !VA || !VT || !VRB || !VSB ||!ePR)
                     {
-                    cerr << "Error nu " << VP << ", "<< VVr  << ", "<< VGr  << ", "<< VAr << ", " << VTr << ", " << VRBr <<  ", "<< VSBr <<endl;
+                    cerr << "Error nu " << VP << ", "<< VV  << ", "<< VG  << ", "<< VA << ", " << VT << ", " << VRB <<  ", "<< VSB <<endl;
                         continue;
                     }
                 // Connect vertices to edge
@@ -2784,22 +2783,22 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 ePR->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP));
                 cout << "Checkpoint vertex kopplade till edge  VP :  " << endl; 
 
-                ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VVr));
+                ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV));
                                 cout << "Checkpoint vertex kopplade till edge  VV :  " << endl; 
 
-                ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VGr));
+                ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
                                 cout << "Checkpoint vertex kopplade till edge  VG :  " << endl; 
 
-                ePR->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VAr));
+                ePR->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA));
                                 cout << "Checkpoint vertex kopplade till edge  VA :  " << endl; 
 
-                ePR->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VTr));
+                ePR->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
                                 cout << "Checkpoint vertex kopplade till edge  VT :  " << endl; 
 
-                ePR->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRBr));
+                ePR->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
                                 cout << "Checkpoint vertex kopplade till edge  VRB :  " << endl; 
 
-                ePR->setVertex(6,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VSBr));
+                ePR->setVertex(6,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VSB));
                 cout << "Checkpoint vertex kopplade till edge   : VSB " << endl; 
 
                 optimizer.addEdge(ePR);
@@ -3113,7 +3112,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
     pMap->IncreaseChangeIndex();
     //eTest5
-    /*
+    bool pr_edge = false;
     if(pr_edge){
         mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
 
@@ -3130,7 +3129,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             VertexClockBias* VSB = static_cast<VertexClockBias*>(optimizer.vertex(mGNSSFramework->satClockBiasID(satId)));
             mGNSSFramework->satInfo[satId].sClockBiasPrior = VSB->estimate();
         }
-    }*/
+    }
 }
 
 void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){

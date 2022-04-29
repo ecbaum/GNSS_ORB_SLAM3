@@ -51,6 +51,8 @@ typedef Eigen::Matrix<double, 15, 1> Vector15d;
 typedef Eigen::Matrix<double, 12, 12> Matrix12d;
 typedef Eigen::Matrix<double, 15, 15> Matrix15d;
 typedef Eigen::Matrix<double, 9, 9> Matrix9d;
+typedef Eigen::Matrix<double, 7, 1> Vector7d;
+
 
 Eigen::Matrix3d ExpSO3(const double x, const double y, const double z);
 Eigen::Matrix3d ExpSO3(const Eigen::Vector3d &w);
@@ -1026,9 +1028,12 @@ public:
 
     EdgePsuedorange(GNSSFramework * framework){
         // Global data
+
         p_WE_WG_ = framework->p_WE_WG;
         R_WE_WG_ = framework->R_WE_WG;
         p_b_g_   = framework->p_b_g;
+        resize(7);
+
     }
 
     virtual bool read(std::istream& is){return false;}
@@ -1066,6 +1071,7 @@ public:
 
     };
     void computeError(){
+    
         const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);                                   // Pose from keyframe
         const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);                            // Velocity from keyframe
         const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);                            // Gyrobias from keyframe
