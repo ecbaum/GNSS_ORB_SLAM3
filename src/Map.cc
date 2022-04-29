@@ -106,7 +106,6 @@ void Map::EraseMapPoint(MapPoint *pMP)
 
 void Map::EraseKeyFrame(KeyFrame *pKF)
 {   if(!pKF->fGF || !pKF->fSPPF){
-        cout << " Keyframe med fGF flaggan" << endl;
         unique_lock<mutex> lock(mMutexMap);
         mspKeyFrames.erase(pKF);
         if(mspKeyFrames.size()>0)
