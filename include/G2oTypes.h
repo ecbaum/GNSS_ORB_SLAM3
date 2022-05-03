@@ -854,6 +854,7 @@ struct SatelliteData{
     int satId;                      // Unique satellite identifier
     double pr;                      // Psuedorange measurement
     double prStdv;
+    double bias;                    // Satellite bias 
     double dp;                      // Doppler measurement
     double prCov;                   // Covariance of psuedorange measurement
     double dpCov;                   // Covariance of doppler measurement
@@ -1033,7 +1034,7 @@ public:
         p_WE_WG_ = framework->p_WE_WG;
         R_WE_WG_ = framework->R_WE_WG;
         p_b_g_   = framework->p_b_g;
-        resize(7);
+        resize(6);
 
     }
 
@@ -1052,6 +1053,7 @@ public:
     double dT;                      // Time between moment of epoch m(e) and moment of exposure, k
     IMU::Preintegrated * pIntGNSS;  // Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
     double pr_;                     // Psuedorange measurement
+    double b_s;                     // Satellite bias
     Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
 
     void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
@@ -1065,6 +1067,7 @@ public:
 
         // Satellite data
         pr_ = framework->epochData[epochIdx].satData[satIdx].pr;
+        b_s = framework->epochData[epochIdx].satData[satIdx].bias;
         P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE * 1000;
 
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
@@ -1081,7 +1084,6 @@ public:
         const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[4]);                // Transformation of between ground (ENU) and local (SLAM)
 
         const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[5]);                         // Clock bias for reciever        
-        const VertexClockBias* b_si = static_cast<const VertexClockBias*>(_vertices[6]);                        // Clock bias for satellite i
 
         //const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
         //const Eigen::Matrix3d dR = pIntGNSS->GetDeltaRotation(b1).cast<double>();                               // Pre-integration from keyframe time to moment of epoch
@@ -1102,7 +1104,7 @@ public:
         const Eigen::Vector3d P_WG_WL = VT->estimate().translation();
 
         const double pr =  static_cast<const double>(pr_);
-        const double pr_error = ( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_si->estimate()) - pr;
+        const double pr_error = ( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_s) - pr;
 
         _error = Eigen::Matrix<double,1,1 > (pr_error);
 
