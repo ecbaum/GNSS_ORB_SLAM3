@@ -13,27 +13,17 @@ Camera.type: "PinHole"
 #Camera1.cx: 367.215
 #Camera1.cy: 248.375
 
-Camera1.fx: 1857.4752797615988
-Camera1.fy: 1869.2155909761746
-Camera1.cx: 1039.692658811044
-Camera1.cy: 739.3362262994145
-
-
-
-
-
-Camera1.k1: -3.0451652061637519e-01
-Camera1.k2: 3.8894492749157322e-02
-Camera1.p1: 1.0517466490567872e-03
-Camera1.p2:  -5.5095449411338973e-04
-Camera1.k3: 1.7054732639063463e-01
-
+#Camera1.fx: 1857.4752797615988
+#Camera1.fy: 1869.2155909761746
+#Camera1.cx: 1039.692658811044
+#Camera1.cy: 739.3362262994145
 
 #Camera1.k1: -3.0451652061637519e-01
 #Camera1.k2: 3.8894492749157322e-02
-#Camera1.p1: -5.5095449411338973e-04
-#Camera1.p2: 1.7054732639063463e-01 
-#Camera1.k3: 1.0517466490567872e-03 
+#Camera1.p1: 1.0517466490567872e-03
+#Camera1.p2:  -5.5095449411338973e-04
+#Camera1.k3: 1.7054732639063463e-01
+
 
 
 #Camera1.k1: -0.28340811
@@ -41,13 +31,51 @@ Camera1.k3: 1.7054732639063463e-01
 #Camera1.p1: 0.00019359
 #Camera1.p2: 1.76187114e-05
 
+
+
+
+
+######### URBAN NAV Data
+#Camera1.k1: -0.109203
+#Camera1.k2:  0.063536
+#Camera1.p1: -0.003427
+#Camera1.p2: -0.000629
+
+#Camera1.fx: 1086.160899
+#Camera1.fy: 1090.242963
+#Camera1.cx: 940.067502
+#Camera1.cy: 586.740077
+
+########UrbanNav 2021-05-17
+Camera1.k1: -0.0442856
+Camera1.k2: 0.0133574
+Camera1.p1: 0.0
+Camera1.p2: 0.0
+Camera1.fx: 264.9425
+Camera1.fy: 264.79
+Camera1.cx: 334.3975
+Camera1.cy: 183.162
+
+Camera.height: 376
+Camera.width: 672
+
+
+#Camera.width: 1920
+#Camera.height: 1200
+
+
+
+#Camera.newWidth: 752
+#Camera.newHeight: 480
+
+
+
 # Camera resolution
-Camera.width: 2048
-Camera.height: 1536
-#camera.newWidth: 1024
-#camera.newHeight: 868
-Camera.newWidth: 752
-Camera.newHeight: 564
+#Camera.width: 2048
+#Camera.height: 1536
+
+#Camera.newWidth: 752
+#Camera.newHeight: 564
 
 # Camera resolution
 #Camera.width: 752
@@ -60,7 +88,7 @@ Camera.newHeight: 564
 
 # Camera frames per second 
 #Camera.fps: 20
-Camera.fps: 10
+Camera.fps: 15
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
 
@@ -70,16 +98,25 @@ IMU.T_b_c1: !!opencv-matrix
    cols: 4
    dt: f
 
-   data: [ -4.7324731432882849e-03, 1.2489446573634877e-02, 9.9991080473321836e-01, 1.8499563388803192e-01,
-        -9.9990518155032682e-01, -1.2990043852130206e-02, -4.5701935984787667e-03, -2.4227446820327757e-02,
-        1.2931806012923930e-02, -9.9983762305936663e-01, 1.2549737377333781e-02, -4.0589470159409335e-01,
-        0., 0., 0., 1. ]
-        
-        
-  # data: [0.0125, 0.0047, 0.9999,1.8499563388803192e-01,
-   #     -0.0130, 0.9999, -0.0046, -2.4227446820327757e-02,
-    #    -0.9998 ,-0.0129, 0.0125, -3.3589470159409335e-01,
-     #    0,0,0,1]
+   #data: [ -4.7324731432882849e-03, 1.2489446573634877e-02, 9.9991080473321836e-01, 1.8499563388803192e-01,
+    #    -9.9990518155032682e-01, -1.2990043852130206e-02, -4.5701935984787667e-03, -2.4227446820327757e-02,
+     #   1.2931806012923930e-02, -9.9983762305936663e-01, 1.2549737377333781e-02, -4.0589470159409335e-01,
+      #  0., 0., 0., 1. ]
+   #HK-2021-05-17     
+   #data: [0.99958975976322017672, 0.017170804625958683, -0.022923255549840760448, -0.0851835233537896739,
+    #  0.0231465893493554992, -0.01292276982900426,0.99964855695461152696, 0.1257734831824673213,
+     # 0.016868538110887141801, -0.99976905607667321087, -0.013314913952324877203, 0.075888549707280005484,
+      #0.0, 0.0, 0.0, 1.0]
+      
+      
+   data: [0.9996,    0.0231,    0.0169,    0.0810,
+        0.0172,   -0.0129,   -0.9998,    0.0790,
+       -0.0229,    0.9996,   -0.0133,   -0.1267,
+        0.0,0.0,0.0,1.0000]
+
+
+
+
 #IMU.NoiseAcc: 0.08          # accelerometer measurement noise standard deviation. #0.2   0.04
 #IMU.NoiseGyro: 0.004         # gyroscope measurement noise standard deviation.     #0.05  0.004
 #IMU.AccWalk: 0.00004         # accelerometer bias random work noise standard deviation.  #0.02
@@ -92,26 +129,33 @@ IMU.T_b_c1: !!opencv-matrix
 #IMU.AccWalk: 3.0000e-03 # 3e-03
 #IMU.Frequency: 100.0
 
-IMU.NoiseGyro: 1.7e-4 #1.6968e-04 Test to multiply by 10. 
-IMU.NoiseAcc: 2.0000e-3 #2.0e-3
-IMU.GyroWalk: 1.9393e-03 
-IMU.AccWalk: 3.0000e-01 # 3e-03
-IMU.Frequency: 100.0
-IMU.InsertKFsWhenLost: 1
-
-# VinsMono parameters:
-#IMU.NoiseGyro: 0.02 #1.6968e-04
-#IMU.NoiseAcc: 0.2 #2.0e-3
-#IMU.GyroWalk: 2e-5
-#IMU.AccWalk: 0.0002 # 3e-03
+#IMU.NoiseGyro: 1.7e-4 #1.6968e-04 Test to multiply by 10. 
+#IMU.NoiseAcc: 2.0000e-3 #2.0e-3
+#IMU.GyroWalk: 1.9393e-03 
+#IMU.AccWalk: 3.0000e-01 # 3e-03
 #IMU.Frequency: 100.0
+#IMU.InsertKFsWhenLost: 1
+
+#UrbanNav 2019-04-28
+#IMU.NoiseGyro: 7.4266825125507141e-03
+#IMU.NoiseAcc: 8.1330537434371481e-03
+#IMU.GyroWalk: 8.6572985145653080e-05
+#IMU.AccWalk: 1.2123362494392119e-04
+#IMU.Frequency: 100.0
+
+
+IMU.NoiseGyro: 1.0270904839480961e-02
+IMU.NoiseAcc: 1.1197412605492375e-02
+IMU.GyroWalk: 9.1355383994881894e-05
+IMU.AccWalk: 1.1751767903346351e-04
+IMU.Frequency: 400.0
 
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 3000 # 1000
+ORBextractor.nFeatures: 2000 # 1000
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2

@@ -196,7 +196,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     GNSSFramework * mGNSSFramework = new GNSSFramework();
 
     // Give path to GNSS file to be read. 
-    string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
+    //  string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
     string pathGNSSMessages = "../data/MH_01_easy/mav0/GNSS_Messages.csv";
     string pathSatPosStart = "../data/MH_01_easy/mav0/SatPosFolder/res_";
     string pathSatIdsList = "../data/MH_01_easy/mav0/SatIds.csv";
@@ -216,12 +216,12 @@ struct rawSatData{
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
 
-    mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
+    //mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
 
     vector<rawSatData> SatPos;
 
     GNSSData = readGNSS(pathGNSSMessages);
-
+    cout << SatIdsList[0] << endl;
     for( int i = 0; i < SatIdsList.size(); i ++){
         rawSatData s_;
         
@@ -238,7 +238,6 @@ struct rawSatData{
         satelliteInfo.sClockBiasPrior =0.0;
         mGNSSFramework->satInfo.push_back(satelliteInfo);
     }
-
     int i = 0;
     for( int j =1; j< GNSSData.back()[0];j++){
         EpochData epochData;
@@ -251,7 +250,7 @@ struct rawSatData{
             SatelliteData satelliteData;
 
             satelliteData.pr = GNSSData[i][3];
-            satelliteData.prStdv = GNSSData[i][5];
+           // satelliteData.prStdv = GNSSData[i][5];
             satelliteData.satId= GNSSData[i][2];
 
             bool doubleBreak = false;
@@ -300,7 +299,7 @@ struct rawSatData{
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
 
-    
+
     mpLocalMapper->mGNSSFramework = mGNSSFramework;
     mpTracker->mGNSSFramework = mGNSSFramework;
 
@@ -1692,6 +1691,7 @@ vector<string> readTextFile(const string &filename)
             //cout << tp << "\n"; //print the data of the string
             res.push_back(tp);
         }
+    cout << "File loaded: " << filename << endl; 
     return res;
     newfile.close(); //close the file object.
    

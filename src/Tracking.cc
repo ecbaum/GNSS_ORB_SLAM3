@@ -2213,7 +2213,7 @@ void Tracking::Track()
 
     // eTEST1
     //if(true){ // If data is loaded
-
+    /*
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
 
@@ -2231,18 +2231,18 @@ void Tracking::Track()
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
-            mCurrentFrame.convertToGNSS = true;
+            mCurrentFrame.convertToGNSS = false;
             epoch_idx_counter++;
         }
 
   //  }
-
-
+*/
+/*
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
 
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             //cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = true; // GNSSOFF
+            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
@@ -2251,7 +2251,7 @@ void Tracking::Track()
             GNSS_counter++;
         }
 
-
+*/
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
@@ -2479,7 +2479,7 @@ void Tracking::StereoInitialization()
 
         Verbose::PrintMess("New Map created with " + to_string(mpAtlas->MapPointsInMap()) + " points", Verbose::VERBOSITY_QUIET);
 
-        //cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
+        cout << "Active map: " << mpAtlas->GetCurrentMap()->GetId() << endl;
 
         mpLocalMapper->InsertKeyFrame(pKFini);
         mLastFrame = Frame(mCurrentFrame);
