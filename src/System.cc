@@ -252,6 +252,7 @@ struct rawSatData{
             satelliteData.pr = GNSSData[i][3];
            // satelliteData.prStdv = GNSSData[i][5];
             satelliteData.satId= GNSSData[i][2];
+            satelliteData.bias= GNSSData[i][6]; // Kolla om rätt index
 
             bool doubleBreak = false;
             for(int k = 0; k<SatPos.size();k++){

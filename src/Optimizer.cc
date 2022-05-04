@@ -2599,7 +2599,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         }
     } 
     //eTest2
-    vector<int> cSatIds;
     if(mGNSSFramework->finishedInitOp && hasGNSSFrame){ // Vertices for GNSS
    //  if(false){
         //Vertex for ENU to local
@@ -2626,52 +2625,12 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 ERP->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB_));
                 optimizer.addEdge(ERP);
 
-
-                // Collect all satellites in epoch
-                for( int sat_idx=0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx++){
-                    cSatIds.push_back(mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId);
-                }
             }
         }
         //eTest3
         
         // Keep unique satellite IDs
 
-
-        sort(cSatIds.begin(), cSatIds.end());
-        cSatIds.erase(unique(cSatIds.begin(), cSatIds.end()), cSatIds.end());
-
-      
-        
-
-        for(int ii=0;ii<cSatIds.size();ii++){
-
-            int satId = cSatIds[ii];
-            double sbias_prior;
-
-
-            for(int j = 0; j < mGNSSFramework->satInfo.size(); j++){
-                   if( mGNSSFramework->satInfo[j].satId == satId){
-                    sbias_prior = mGNSSFramework->satInfo[j].sClockBiasPrior;
-                   }
-
-            }
-
-            // Satellite clock bias vertex
-            //mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId;
-
-            VertexClockBias * VSB = new VertexClockBias(sbias_prior);
-//            cout << "     " << satId;
-            VSB->setId(mGNSSFramework->satClockBiasID(satId));
-            optimizer.addVertex(VSB);    
-
-            // Satellite bias prior edge
-
-            g2o::HyperGraph::Vertex* VSB_ = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
-            EdgeClockPrior * ESP = new EdgeClockPrior(sbias_prior, 1);
-            ESP->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VSB_));
-
-        }
         cout << endl;
     }   
 
@@ -2772,12 +2731,11 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 g2o::HyperGraph::Vertex* VA = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
                 g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
                 g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
-                g2o::HyperGraph::Vertex* VSB = optimizer.vertex(mGNSSFramework->satClockBiasID(satId));
 
                // cout << "Checkpoint vertex skapade:  " << endl; 
-                if( !VP || !VV || !VG || !VA || !VT || !VRB || !VSB ||!ePR)
+                if( !VP || !VV || !VG || !VA || !VT || !VRB ||!ePR)
                     {
-                    cerr << "Error nu " << VP << ", "<< VV  << ", "<< VG  << ", "<< VA << ", " << VT << ", " << VRB <<  ", "<< VSB <<endl;
+                    cerr << "Error nu " << VP << ", "<< VV  << ", "<< VG  << ", "<< VA << ", " << VT << ", " << VRB <<endl;
                         continue;
                     }
                 // Connect vertices to edge
@@ -2792,8 +2750,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 ePR->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
 
                 ePR->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
-
-                ePR->setVertex(6,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VSB));
 
                 optimizer.addEdge(ePR);
                 //cout << "Test4 Klart" << endl;
@@ -3119,12 +3075,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 cout << "Rec bias: " << VRB->estimate() << endl;
               
             }
-        }
-        for(int i=0;i<cSatIds.size();i++){
-            int satId = cSatIds[i];
-            VertexClockBias* VSB = static_cast<VertexClockBias*>(optimizer.vertex(mGNSSFramework->satClockBiasID(satId)));
-            mGNSSFramework->satInfo[satId].sClockBiasPrior = VSB->estimate();
-            cout << "Sat bias: " << VSB->estimate() << endl;
         }
     }
 }
