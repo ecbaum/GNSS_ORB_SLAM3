@@ -63,13 +63,13 @@ int main(int argc, char **argv)
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        cout << "Loading images for sequence " << seq << "...";
+        cerr << "Loading images for sequence " << seq << "...";
         LoadImages(string(argv[(3*seq)+3]), string(argv[(2*seq)+4]), string(argv[(2*seq)+5]), vstrImageLeftFilenames[seq], vstrImageRightFilenames[seq], vTimestampsCam[seq]);
-        cout << "Total images: " << vstrImageLeftFilenames[seq].size() << endl;
-        cout << "Total cam ts: " << vTimestampsCam[seq].size() << endl;
-        cout << "first cam ts: " << vTimestampsCam[seq][0] << endl;
+        cerr << "Total images: " << vstrImageLeftFilenames[seq].size() << endl;
+        cerr << "Total cam ts: " << vTimestampsCam[seq].size() << endl;
+        cerr << "first cam ts: " << vTimestampsCam[seq][0] << endl;
 
-        cout << "LOADED!" << endl;
+        cerr << "LOADED!" << endl;
 
         nImages[seq] = vstrImageLeftFilenames[seq].size();
         tot_images += nImages[seq];

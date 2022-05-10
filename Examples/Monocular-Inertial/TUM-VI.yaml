@@ -5,27 +5,27 @@
 #--------------------------------------------------------------------------------------------
 File.version: "1.0"
 
-Camera.type: "KannalaBrandt8"
+Camera.type: "PinHole"
 
 # Camera calibration and distortion parameters (OpenCV) 
-Camera1.fx: 190.978477
-Camera1.fy: 190.973307
-Camera1.cx: 254.931706
-Camera1.cy: 256.897442
 
-# Equidistant distortion 0.0034823894022493434, 0.0007150348452162257, -0.0020532361418706202, 0.00020293673591811182
-#Camera.bFishEye: 1
-Camera1.k1: 0.003482389402
-Camera1.k2: 0.000715034845
-Camera1.k3: -0.002053236141
-Camera1.k4: 0.000202936736
+Camera1.k1: -0.0442856
+Camera1.k2: 0.0133574
+Camera1.p1: 0.0
+Camera1.p2: 0.0
+
+
+Camera1.fx: 264.9425
+Camera1.fy: 264.79
+Camera1.cx: 334.3975
+Camera1.cy: 183.162
     
 # Camera resolution
-Camera.width: 512
-Camera.height: 512
+Camera.width: 672
+Camera.height: 376
 
 # Camera frames per second 
-Camera.fps: 20
+Camera.fps: 15
 
 # Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
 Camera.RGB: 1
@@ -35,25 +35,45 @@ IMU.T_b_c1: !!opencv-matrix
    rows: 4
    cols: 4
    dt: f
-   data: [-0.9995250378696743, 0.0075019185074052044, -0.02989013031643309, 0.045574835649698026, 
-          0.029615343885863205, -0.03439736061393144, -0.998969345370175, -0.071161801837997044,
-         -0.008522328211654736, -0.9993800792498829, 0.03415885127385616, -0.044681254117144367,
-          0.0, 0.0, 0.0, 1.0]
+   #data:   [0.99958975976322017672, 0.017170804625958683, -0.022923255549840760448, -0.0851835233537896739,
+    #        0.0231465893493554992, -0.01292276982900426, 0.99964855695461152696, 0.1257734831824673213,
+     #        0.016868538110887141801, -0.99976905607667321087,-0.013314913952324877203, 0.075888549707280005484,
+      #       0.0, 0.0, 0.0, 1.0]
+             
+             
+   data: [0.9996, 0.0231, 0.0169, 0.0810,
+          0.0172, -0.0129, -0.9998, 0.0790,
+         -0.0229, 0.9996, -0.0133, -0.1267,
+          0., 0., 0., 1.0000]
+   #data: [0.9996,   -0.0256,   -0.0097,    0.0014,
+    #     0.0255,    0.9997,   -0.0045,    0.0230,
+     #    0.0098,    0.0042,    0.9999,    0.0021,
+      #   0.0,         0.0,         0.0,    1.0000]  
+
+  # data: [0.999626, 0.025546, 0.009792, -0.002000,
+   #     -0.025588, 0.999664, 0.004221, -0.023000,
+    #    -0.009681 ,-0.004470, 0.999943, -0.002000,
+     #    0.000000, 0.000000, 0.000000, 1.00000]
+   #data: [0.00595301, -0.99997993, -0.00216885, -0.10199108,
+    #      0.00965226,  0.00222625, -0.99995094, -0.0121086,
+     #     0.9999357,   0.00593179,  0.00966532, -0.04648173,
+      #    0, 0, 0, 1]
+
 
 # IMU noise (Use those from VINS-mono)
-IMU.NoiseGyro: 0.00016 # rad/s^0.5 
-IMU.NoiseAcc: 0.0028 # m/s^1.5
-IMU.GyroWalk: 0.000022 # rad/s^1.5
-IMU.AccWalk: 0.00086 # m/s^2.5
-IMU.Frequency: 200.0
-
-
+IMU.NoiseGyro: 0.07 # 1.6968e-04 
+IMU.NoiseAcc:  0.016 # 2.0000e-3
+IMU.GyroWalk:  0.019474 
+IMU.AccWalk:   0.0002509 # 3.0000e-3
+IMU.Frequency: 400.0
+IMU.InsertKFsWhenLost: 0
+#ThDepth: 40.0 # 35
 #--------------------------------------------------------------------------------------------
 # ORB Parameters
 #--------------------------------------------------------------------------------------------
 
 # ORB Extractor: Number of features per image
-ORBextractor.nFeatures: 1500 # Tested with 1250
+ORBextractor.nFeatures: 1200 # Tested with 1250
 
 # ORB Extractor: Scale factor between levels in the scale pyramid 	
 ORBextractor.scaleFactor: 1.2
@@ -65,8 +85,8 @@ ORBextractor.nLevels: 8
 # Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
 # Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
 # You can lower these values if your images have low contrast
-ORBextractor.iniThFAST: 20
-ORBextractor.minThFAST: 7
+ORBextractor.iniThFAST: 15
+ORBextractor.minThFAST: 3
 
 #--------------------------------------------------------------------------------------------
 # Viewer Parameters
@@ -81,3 +101,18 @@ Viewer.ViewpointX: 0.0
 Viewer.ViewpointY: -0.7
 Viewer.ViewpointZ: -3.5
 Viewer.ViewpointF: 500.0
+
+
+
+
+ #data: [ -4.7324731432882849e-03, 1.2489446573634877e-02, 9.9991080473321836e-01, -0.0851835233537896739,
+    #    -9.9990518155032682e-01, -1.2990043852130206e-02, -4.5701935984787667e-03, 0.1257734831824673213,
+     #   1.2931806012923930e-02, -9.9983762305936663e-01, 1.2549737377333781e-02, 0.075888549707280005484,
+      #  0., 0., 0., 1. ]         
+
+
+   #data: [-0.9995250378696743, 0.0075019185074052044, -0.02989013031643309, 0.045574835649698026, 
+    #      0.029615343885863205, -0.03439736061393144, -0.998969345370175, -0.071161801837997044,
+     #    -0.008522328211654736, -0.9993800792498829, 0.03415885127385616, -0.044681254117144367,
+      #    0.0, 0.0, 0.0, 1.0]
+      

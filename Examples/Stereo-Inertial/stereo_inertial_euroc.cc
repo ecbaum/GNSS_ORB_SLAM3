@@ -80,14 +80,21 @@ int main(int argc, char **argv)
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
-        cout << "Loading images for sequence " << seq << "...";
+        cout << "Loading images for sequence " << seq << "..."<<endl;
 
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
+        cout << pathSeq << endl;
 
         string pathCam0 = pathSeq + "/mav0/cam0/data";
+        cout << pathCam0 << endl;
+
         string pathCam1 = pathSeq + "/mav0/cam1/data";
+        cout << pathCam1 << endl;
+
         string pathImu = pathSeq + "/mav0/imu0/data.csv";
+        cout << pathImu << endl;
+
 
         LoadImages(pathCam0, pathCam1, pathTimeStamps, vstrImageLeft[seq], vstrImageRight[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
@@ -129,7 +136,7 @@ int main(int argc, char **argv)
     cout.precision(17);
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, false);
+    ORB_SLAM3::System SLAM(argv[1],argv[2],ORB_SLAM3::System::IMU_STEREO, true);
 
     cv::Mat imLeft, imRight;
     for (seq = 0; seq<num_seq; seq++)
@@ -143,7 +150,7 @@ int main(int argc, char **argv)
         int proccIm = 0;
         for(int ni=0; ni<nImages[seq]; ni++, proccIm++)
         {
-            // Read left and right images from file
+                        // Read left and right images from file
             imLeft = cv::imread(vstrImageLeft[seq][ni],cv::IMREAD_UNCHANGED);
             imRight = cv::imread(vstrImageRight[seq][ni],cv::IMREAD_UNCHANGED);
 
@@ -244,6 +251,9 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
                 vector<string> &vstrImageLeft, vector<string> &vstrImageRight, vector<double> &vTimeStamps)
 {
     ifstream fTimes;
+    cout << strPathLeft << endl;
+    cout << strPathRight << endl;
+    cout << strPathTimes << endl;
     fTimes.open(strPathTimes.c_str());
     vTimeStamps.reserve(5000);
     vstrImageLeft.reserve(5000);
@@ -269,6 +279,7 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
 void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
 {
     ifstream fImu;
+    cout << strImuPath << endl;
     fImu.open(strImuPath.c_str());
     vTimeStamps.reserve(5000);
     vAcc.reserve(5000);

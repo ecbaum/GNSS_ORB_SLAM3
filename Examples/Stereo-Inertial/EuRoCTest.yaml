@@ -1,0 +1,131 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+Camera.type: "PinHole"
+
+# Camera calibration and distortion parameters (OpenCV) (equal for both cameras after stereo rectification)
+Camera.fx: 528.3009033203125
+Camera.fy: 528.3009033203125
+Camera.cx: 632.7931518554688
+Camera.cy: 372.5525817871094
+
+# 用的是校正过的节点，所以畸变参数设置为0
+# Camera.k1: 0.0
+# Camera.k2: 0.0
+# Camera.p1: 0.0
+# Camera.p2: 0.0
+
+Camera.width: 672
+Camera.height: 376
+
+# Camera frames per second 
+Camera.fps: 15.0
+
+# stereo baseline times fx
+Camera.bf: 63.396108984375
+
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 1
+
+# Close/Far threshold. Baseline times.
+ThDepth: 40.0 # 35
+
+# Transformation from camera 0 to body-frame (imu)
+# 从左目转换到IMU坐标系
+Tbc: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   data: [ 0.0055827285742915,  0.0128040922714603,  0.9999024394223516,  0.0285440762197234,
+          -0.9999801332587812,  0.0029981004108222,  0.0055447706603969, -0.1038871459045697,
+          -0.0029268121592544, -0.9999135295689473, 0.0128205754767047, -0.0063514683297355,
+           0.0000000000000000, -0.0000000000000000, -0.0000000000000000,  1.0000000000000000]
+
+# IMU noise
+# get it from Project of **zed-examples/tutorials/tutorial 7 - sensor data/**.
+IMU.NoiseGyro: 0.007 # 1.6968e-04 
+IMU.NoiseAcc:  0.0016 # 2.0000e-3
+IMU.GyroWalk:  0.0019474 
+IMU.AccWalk:   0.0002509 # 3.0000e-3
+IMU.Frequency: 400
+
+#--------------------------------------------------------------------------------------------
+# Stereo Rectification. Only if you need to pre-rectify the images.
+# Camera.fx, .fy, etc must be the same as in LEFT.P
+#--------------------------------------------------------------------------------------------
+LEFT.height: 376
+LEFT.width: 672
+LEFT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [-0.0442856, 0.0133574, 0, 0, 0]
+LEFT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [264.9425, 0.0, 334.3975, 0.0, 264.79, 183.162, 0.0, 0.0, 1.0]
+LEFT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+LEFT.Rf:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: f
+   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+RIGHT.height: 376
+RIGHT.width: 672
+RIGHT.D: !!opencv-matrix
+   rows: 1
+   cols: 5
+   dt: d
+   data: [0, 0, 0, 0, 0]
+RIGHT.K: !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [264.9425, 0.0, 334.3975, 0.0, 264.79, 183.162, 0.0, 0.0, 1.0]
+RIGHT.R:  !!opencv-matrix
+   rows: 3
+   cols: 3
+   dt: d
+   data: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 1200
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize:2
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3
+Viewer.ViewpointX: 0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500
