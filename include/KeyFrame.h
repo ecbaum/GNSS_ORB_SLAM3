@@ -28,6 +28,7 @@
 #include "Frame.h"
 #include "KeyFrameDatabase.h"
 #include "ImuTypes.h"
+#include "GNSSFrame.h"
 
 #include "GeometricCamera.h"
 #include "SerializationUtils.h"
@@ -38,7 +39,7 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/map.hpp>
 
-
+#include <vector>
 namespace ORB_SLAM3
 {
 
@@ -46,7 +47,7 @@ class Map;
 class MapPoint;
 class Frame;
 class KeyFrameDatabase;
-
+class GNSSFrame;
 class GeometricCamera;
 
 class KeyFrame
@@ -302,12 +303,14 @@ public:
 
     void SetORBVocabulary(ORBVocabulary* pORBVoc);
     void SetKeyFrameDatabase(KeyFrameDatabase* pKFDB);
+    void IntegrateToGNSS();
+    void setGNSS();
+    Eigen::Vector3f GetPosBias();
 
-    bool bImu;
+    //void SetTestVec(std::vector<float> tVec); // GNSS Martin
 
     // The following variables are accesed from only 1 thread or never change (no mutex needed).
 public:
-
     static long unsigned int nNextId;
     long unsigned int mnId;
     const long unsigned int mnFrameId;
@@ -421,10 +424,30 @@ public:
     std::vector <KeyFrame*> mvpLoopCandKFs;
     std::vector <KeyFrame*> mvpMergeCandKFs;
 
+
+
+    vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
+    vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
+    vector<double> tstepBetweenKFs; //GNSS Martin
+    vector<double> SPP_geodetic;
+
+    
+    //Erik
+
+    Eigen::Vector3d get_SPP();
+    IMU::Preintegrated* mpImuPreintegratedToGNSS; // current KF -> GF
+    double timeStampGNSS;
+    double GNSS_deltaT;
+    bool bImu;
+    bool fGF;
+    float mPosb_x, mPosb_y, mPosb_z;
+    int epochIdx;
+    //E
+
     //bool mbHasHessian;
     //cv::Mat mHessianPose;
 
-    // The following variables need to be accessed trough a mutex to be thread safe.
+    // The following variables n6eed to be accessed trough a mutex to be thread safe.
 protected:
     // sophus poses
     Sophus::SE3<float> mTcw;
@@ -503,7 +526,6 @@ protected:
 
 public:
     GeometricCamera* mpCamera, *mpCamera2;
-
     //Indexes of stereo observations correspondences
     std::vector<int> mvLeftToRightMatch, mvRightToLeftMatch;
 

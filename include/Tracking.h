@@ -36,6 +36,7 @@
 #include "System.h"
 #include "ImuTypes.h"
 #include "Settings.h"
+#include "G2oTypes.h"
 
 #include "GeometricCamera.h"
 
@@ -116,7 +117,6 @@ public:
 #endif
 
 public:
-
     // Tracking states
     enum eTrackingState{
         SYSTEM_NOT_READY=-1,
@@ -171,6 +171,13 @@ public:
     double t0IMU; // time-stamp of IMU initialization
     bool mFastInit = false;
 
+    vector<vector<double>> GNSS_data;
+    int GNSS_counter;
+    int frame_counter_for_GNSS;
+
+    //vector<EpochData> epoch_data;
+    GNSSFramework * mGNSSFramework;
+    int epoch_idx_counter;
 
     vector<MapPoint*> GetLocalMapMPS();
 
@@ -223,6 +230,19 @@ protected:
     bool NeedNewKeyFrame();
     void CreateNewKeyFrame();
 
+    vector<Eigen::Matrix<float, 3, 1>> accBetweenKFs; //GNSS Martin
+    vector<Eigen::Matrix<float, 3, 1>> angVelBetweenKFs; //GNSS Martin
+    vector<double>tstepBetweenKFs; //GNSS Martin
+    /* Inside mECEF you'll find: 
+    t_PrevFrame;
+    t_GNSS_ecef;
+    x_GNSS_ecef;
+    y_GNSS_ecef;
+    z_GNSS_ecef;
+     */
+     vector<double> SPP_geodetic;
+
+   
     // Perform preintegration from last frame
     void PreintegrateIMU();
 

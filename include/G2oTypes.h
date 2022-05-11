@@ -842,6 +842,271 @@ public:
     Eigen::Vector3d dtij;
 };
 
+// Erik
+
+Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates);
+
+struct SatelliteData{
+    string satSystemId;             // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
+    int satId;                      // Unique satellite identifier
+    double Pseudorange;             // Psuedorange measurement
+    double RawPseudorange;          // Raw Psuedorange measurement
+    double ErrTropo;                // Troposheric Errors
+    double ErrIono;                 // Ionospheric Errors
+    double SatClkErr;               // SatClockError
+    double Snr;                     // Receiver/satellite signal to noise ratio? Behöver kollas
+    Eigen::Vector3d p_WE;           // Satellite position in {WE} frame [KM]
+};
+
+
+struct EpochData{
+    int epochIdx;
+    double epochTime;               // Moment of time of epoch 
+    double gKFTime;                 // Moment of time of corresponding GNSS KeyFrame
+    double dT;
+    KeyFrame * gKF;                 // Pointer to GNSS KeyFrame (remove?)
+    vector<SatelliteData> satData;  // Vector of satellite data
+    double rClockBiasPrior;         // Prior estimate of reciever clock bias w.r.t. satellite constellation
+};
+
+class GNSSFramework
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    GNSSFramework(){
+        initOptCounter = 0;
+        initOptThreshold = 3;
+        KeyFrameThreshold = 4;
+        bInitalized = false;
+        finishedInitOp = false;
+    }
+
+    void setupInitialization(KeyFrame * cKF);
+    bool checkInitialization(int N_KF, KeyFrame * cKF);
+    void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
+    g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
+    vector<EpochData> epochData;
+    //vector<SatelliteInfo> satInfo; // Currently: satInfo[idx].satId = idx;
+
+    // Initialization
+    int initOptCounter;         // # of optimizations performed
+    int initOptThreshold;       // # of optimizations until initalization stopped
+    int KeyFrameThreshold;      // # of keyframes in map required to begin optimization
+    int refKFId;                // Id of reference keyframe
+    Eigen::Vector3d p_WE_WG;    // Reference point for initalization
+    Eigen::Matrix3d R_WE_WG;
+    const Eigen::Vector3d p_b_g;
+    g2o::SE3Quat T_WG_WL;       // Transformation from ground to local
+    bool bInitalized;
+    bool finishedInitOp;
+    int mnId = 10000000;  
+
+    // Optimizer vertex ID for reciever and satellite clock biases
+    int recClockBiasID(int epochIdx){return mnId + 1 + epochIdx;}
+    int satClockBiasID(int satId){return 2*mnId + satId;} // Currently only supports one system
+
+};
+
+
+class EdgeSPPToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgeSPPToLocal(GNSSFramework * mGNSSFramework){
+        p_WE_WG = mGNSSFramework->p_WE_WG;
+        R_WE_WG = mGNSSFramework->R_WE_WG;
+
+        Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
+        setInformation(Info);
+    }
+    EdgeSPPToLocal(){
+        Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
+        setInformation(Info);
+    }
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    
+    Eigen::Vector3d geodeticCoordinates;   // SPP positioning measurement in geodetic coordinates;
+    Eigen::Vector3d p_WE_WG;               // Coordinate of the origin of {WG} (ENU) from perspective of {WG}, reference
+    Eigen::Matrix3d R_WE_WG;
+                                           // gl - Position of GNSS reciever at time instant l
+    Eigen::Vector3d p_WE_gl;               // gl expressed in {WE}, ECEF from SPP
+    Eigen::Vector3d p_WL_gl;               // gl expressed in {WL}, SLAM frame
+
+    Eigen::Vector3d p_WG_gl;               // gl expressed in {WG}, ENU, calculated from p_WE_gl and p_WE_WG
+
+    void setLocalPosition(KeyFrame *gKF){p_WL_gl = gKF->GetPose().translation().cast<double>();};
+    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
+
+    void computeError(){
+
+        p_WE_gl = GeodeticToECEF(geodeticCoordinates);         // From Geodetic to reciever to ECEF to reciever
+        p_WG_gl = ECEFToENU(p_WE_gl, geodeticCoordinates);     // From ECEF to reciever to ENU to reciever
+
+        const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
+        _error << p_WG_gl - TF->estimate().map(p_WL_gl);
+
+        /*
+        cout << "   -init error:   ";
+        for(int i=0;i<3;i++){ cout <<  _error[i] << "    "; }
+        cout << endl;
+        */
+
+    }
+};  
+
+
+class VertexClockBias : public g2o::BaseVertex<1,double>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    VertexClockBias(double prior){
+
+        if(!isnan(prior)){
+            setEstimate(prior);
+        }else{
+            setEstimate(0);
+        }
+    }
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    virtual void setToOriginImpl() {}
+
+    virtual void oplusImpl(const double* update_){
+        _estimate += *update_;
+        updateCache();
+    }
+};
+
+class EdgeClockPrior : public g2o::BaseUnaryEdge<1,double,VertexClockBias>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgeClockPrior(double _prior, double _cov){
+        /*TODO:
+            estimate covariance?
+        */
+        if(!isnan(_prior)){
+            mPrior = _prior;
+        }else{
+            mPrior = 0;
+        }
+        
+        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)/_cov;
+        setInformation(Info);
+    }
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    double mPrior;
+    void computeError(){
+        const VertexClockBias* VBias = static_cast<const VertexClockBias*>(_vertices[0]);
+
+        Eigen::Matrix<double, 1, 1> bias(VBias->estimate());
+        Eigen::Matrix<double, 1, 1> prior(mPrior);
+        _error = bias - prior;
+    }
+
+};
+
+class EdgePsuedorange : public g2o::BaseMultiEdge<1,double>
+{
+public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+    EdgePsuedorange(GNSSFramework * framework){
+        // Global data
+
+        p_WE_WG_ = framework->p_WE_WG;
+        R_WE_WG_ = framework->R_WE_WG;
+        p_b_g_   = framework->p_b_g;
+        resize(6);
+
+    }
+
+    virtual bool read(std::istream& is){return false;}
+    virtual bool write(std::ostream& os) const{return false;}
+
+    double c = 299792458;         
+    Eigen::Vector3d gI;
+
+    // Transformation parameters 
+    Eigen::Vector3d p_WE_WG_;      // Coordinate of the origin of {WG} (ENU) from perspective of {WG} (ECEF)
+    Eigen::Matrix3d R_WE_WG_;      // Rortation for ECEF to ENU
+    Eigen::Vector3d p_b_g_;        // Translational component of IMU-GNSS receiver extrinsic parameter
+
+    // Measurements
+    double dT;                      // Time between moment of epoch m(e) and moment of exposure, k
+    IMU::Preintegrated * pIntGNSS;  // Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
+    double pr_;                     // Psuedorange measurement
+    double b_s;                     // Satellite bias
+    Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
+
+    void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
+        /* Todo:
+                set info based on covariance in psuedorange, position estimates and biases
+        */
+
+        // Epoch data
+        dT = framework->epochData[epochIdx].dT;
+        pIntGNSS = GKF->mpImuPreintegratedToGNSS;
+
+        // Satellite data
+        pr_ = framework->epochData[epochIdx].satData[satIdx].Pseudorange;
+        // b_s = framework->epochData[epochIdx].satData[satIdx].bias;
+        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE * 1000;
+
+        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
+        setInformation(Info);
+
+    };
+    void computeError(){
+
+        const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);                                   // Pose from keyframe
+        const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);                            // Velocity from keyframe
+        const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);                            // Gyrobias from keyframe
+        const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);                              // Accbias from keyframe
+
+        const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[4]);                // Transformation of between ground (ENU) and local (SLAM)
+
+        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[5]);                         // Clock bias for reciever        
+
+        //const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
+        //const Eigen::Matrix3d dR = pIntGNSS->GetDeltaRotation(b1).cast<double>();                               // Pre-integration from keyframe time to moment of epoch
+        //const Eigen::Vector3d dV = pIntGNSS->GetDeltaVelocity(b1).cast<double>();
+        //const Eigen::Vector3d dP = pIntGNSS->GetDeltaPosition(b1).cast<double>();
+
+        const Eigen::Vector3d p_WE_WG = static_cast<const Eigen::Vector3d>(p_WE_WG_);                           // Retrieve transformations
+        const Eigen::Matrix3d R_WE_WG = static_cast<const Eigen::Matrix3d>(R_WE_WG_);
+        const Eigen::Vector3d p_b_g   = static_cast<const Eigen::Vector3d>(p_b_g_);
+
+        gI << 0, 0, -IMU::GRAVITY_VALUE;              
+        Eigen::Vector3d g = VP1->estimate().Rwb*gI;                                                             // Rotate gravity vector
+                                                                                   
+        //const Eigen::Vector3d T_e_k = VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;   // Integrated IMU position from moment of exposure to moment of epoch
+        const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb;// - T_e_k; 
+
+        const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
+        const Eigen::Vector3d P_WG_WL = VT->estimate().translation();
+
+        const double pr =  static_cast<const double>(pr_);
+        const double pr_error = ( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_s) - pr;
+
+        _error = Eigen::Matrix<double,1,1 > (pr_error);
+
+    }
+};
+
+
+//E
+
+
 } //namespace ORB_SLAM2
 
 #endif // G2OTYPES_H

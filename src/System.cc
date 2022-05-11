@@ -185,11 +185,20 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpFrameDrawer = new FrameDrawer(mpAtlas);
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
 
+
+
+    //GNSSFramework * mGNSSFramework = new GNSSFramework();
+    // Give path to GNSS file to be read. 
+    string pathSPP = "../data/MH_01_easy/mav0/2021-05-17_HK_SPP_m8t.csv";
+
+
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
+    mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
 
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,

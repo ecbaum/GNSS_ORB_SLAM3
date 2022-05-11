@@ -97,6 +97,8 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
     initID = 0; lastID = 0;
     mbInitWith3KFs = false;
     mnNumDataset = 0;
+    SPP_geodetic;
+
 
     vector<GeometricCamera*> vpCams = mpAtlas->GetAllCameras();
     std::cout << "There are " << vpCams.size() << " cameras in the atlas" << std::endl;
@@ -2197,6 +2199,21 @@ void Tracking::Track()
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
 
+    while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
+
+    if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
+            //cout << "Insert NEW SPP keyframe" << endl; 
+            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
+            SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
+            SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
+            SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
+            SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
+            SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
+            GNSS_counter++;
+        }
+
+
+
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
@@ -2230,6 +2247,11 @@ void Tracking::Track()
                     }
             }
 
+
+
+
+
+
             // Delete temporal MapPoints
             for(list<MapPoint*>::iterator lit = mlpTemporalPoints.begin(), lend =  mlpTemporalPoints.end(); lit!=lend; lit++)
             {
@@ -2242,12 +2264,15 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
             bool bNeedKF = NeedNewKeyFrame();
-
-            // Check if we need to insert a new keyframe
-            // if(bNeedKF && bOK)
-            if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
-                                   (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD))))
+            if(mCurrentFrame.convertToGNSSSpp ){
                 CreateNewKeyFrame();
+            }else
+            {
+                if(bNeedKF && (bOK || (mInsertKFsLost && mState==RECENTLY_LOST &&
+                (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)))){
+                CreateNewKeyFrame(); 
+                }
+            }
 
 #ifdef REGISTER_TIMES
             std::chrono::steady_clock::time_point time_EndNewKF = std::chrono::steady_clock::now();
@@ -3223,6 +3248,16 @@ void Tracking::CreateNewKeyFrame()
 
     KeyFrame* pKF = new KeyFrame(mCurrentFrame,mpAtlas->GetCurrentMap(),mpKeyFrameDB);
 
+
+
+    if(mCurrentFrame.convertToGNSSSpp){
+
+        //eTest1
+        pKF->fSPPF = true;
+        pKF->SetNotErase();
+        pKF->SPP_geodetic = SPP_geodetic; 
+        SPP_geodetic.clear();  
+    }
     if(mpAtlas->isImuInitialized()) //  || mpLocalMapper->IsInitializing())
         pKF->bImu = true;
 
