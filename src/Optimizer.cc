@@ -2594,11 +2594,13 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     for(int i=0;i<N;i++){ 
         KeyFrame* pKFi = vpOptimizableKFs[i];
         if(pKFi->fGF){
+            cout << "WTF" << endl;
             hasGNSSFrame = true;
             break;
         }
     } 
     //eTest2
+    /*
     if(mGNSSFramework->finishedInitOp && hasGNSSFrame){ // Vertices for GNSS
    //  if(false){
         //Vertex for ENU to local
@@ -2633,6 +2635,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
         cout << endl;
     }   
+    */
 
 
     // Create intertial constraints
@@ -2712,7 +2715,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         //eTest4
 
         // psuedorange edges
-        if(pKFi->fGF && mGNSSFramework->finishedInitOp){
+        if(false){
+        //if(pKFi->fGF && mGNSSFramework->finishedInitOp){
             //cout << "Checkpoint 1:  " << endl; 
             int ep_idx = pKFi->epochIdx;
             optDone = true;

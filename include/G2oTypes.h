@@ -850,22 +850,17 @@ public:
 Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates);
 
 struct SatelliteData{
-    //char satSystemId;               // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
+    string satSystemId;             // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
     int satId;                      // Unique satellite identifier
-    double pr;                      // Psuedorange measurement
-    double prStdv;
-    double bias;                    // Satellite bias 
-    double dp;                      // Doppler measurement
-    double prCov;                   // Covariance of psuedorange measurement
-    double dpCov;                   // Covariance of doppler measurement
+    double Pseudorange;             // Psuedorange measurement
+    double RawPseudorange;          // Raw Psuedorange measurement
+    double ErrTropo;                // Troposheric Errors
+    double ErrIono;                 // Ionospheric Errors
+    double SatClkErr;               // SatClockError
+    double Snr;                     // Receiver/satellite signal to noise ratio? Behöver kollas
     Eigen::Vector3d p_WE;           // Satellite position in {WE} frame [KM]
 };
 
-struct SatelliteInfo{
-    //char satSystemId;
-    int satId;                      // Unique satellite identifier
-    double sClockBiasPrior;         // Prior estimate of satellite clock bias 
-};
 
 struct EpochData{
     int epochIdx;
@@ -894,7 +889,7 @@ public:
     void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
     g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
     vector<EpochData> epochData;
-    vector<SatelliteInfo> satInfo; // Currently: satInfo[idx].satId = idx;
+    //vector<SatelliteInfo> satInfo; // Currently: satInfo[idx].satId = idx;
 
     // Initialization
     int initOptCounter;         // # of optimizations performed
@@ -1066,8 +1061,8 @@ public:
         pIntGNSS = GKF->mpImuPreintegratedToGNSS;
 
         // Satellite data
-        pr_ = framework->epochData[epochIdx].satData[satIdx].pr;
-        b_s = framework->epochData[epochIdx].satData[satIdx].bias;
+        pr_ = framework->epochData[epochIdx].satData[satIdx].Pseudorange;
+        // b_s = framework->epochData[epochIdx].satData[satIdx].bias;
         P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE * 1000;
 
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);

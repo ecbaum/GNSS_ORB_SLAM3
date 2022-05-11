@@ -194,20 +194,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpMapDrawer = new MapDrawer(mpAtlas, strSettingsFile, settings_);
     
     GNSSFramework * mGNSSFramework = new GNSSFramework();
-
     // Give path to GNSS file to be read. 
-    //  string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
-    string pathGNSSMessages = "../data/MH_01_easy/mav0/GNSS_Messages.csv";
-    string pathSatPosStart = "../data/MH_01_easy/mav0/SatPosFolder/res_";
-    string pathSatIdsList = "../data/MH_01_easy/mav0/SatIds.csv";
-    vector<string> SatIdsList = readTextFile(pathSatIdsList);
-    vector<vector<double>> SatPos_;
+    string pathSPP = "../data/MH_01_easy/mav0/2021-05-17_HK_SPP.csv";
+    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message.csv";
     vector<vector<double>> GNSSData;
-
-struct rawSatData{
-    int satId;
-    vector<vector<double>> rawData;
-};
 
     
     //Initialize the Tracking thread
@@ -216,28 +206,10 @@ struct rawSatData{
     mpTracker = new Tracking(this, mpVocabulary, mpFrameDrawer, mpMapDrawer,
                              mpAtlas, mpKeyFrameDatabase, strSettingsFile, mSensor, settings_, strSequence);
 
-    //mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
-
-    vector<rawSatData> SatPos;
+    mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
 
     GNSSData = readGNSS(pathGNSSMessages);
-    cout << SatIdsList[0] << endl;
-    for( int i = 0; i < SatIdsList.size(); i ++){
-        rawSatData s_;
-        
-        SatPos_ = (readGNSS(pathSatPosStart+SatIdsList[i]+".csv"));
-        s_.rawData = SatPos_;
-        SatIdsList[i].erase(remove(SatIdsList[i].begin(), SatIdsList[i].end(), 'G'), SatIdsList[i].end());
-        s_.satId = std::stoi(SatIdsList[i]);
 
-        SatPos.push_back(s_);
-
-
-        SatelliteInfo satelliteInfo;
-        satelliteInfo.satId = s_.satId;
-        satelliteInfo.sClockBiasPrior =0.0;
-        mGNSSFramework->satInfo.push_back(satelliteInfo);
-    }
     int i = 0;
     for( int j =1; j< GNSSData.back()[0];j++){
         EpochData epochData;
@@ -249,31 +221,19 @@ struct rawSatData{
         while(GNSSData[i][0] == j){
             SatelliteData satelliteData;
 
-            satelliteData.pr = GNSSData[i][3];
-           // satelliteData.prStdv = GNSSData[i][5];
-            satelliteData.satId= GNSSData[i][2];
-            satelliteData.bias= GNSSData[i][6]; // Kolla om rätt index
+            satelliteData.satId =  GNSSData[i][2];
+            satelliteData.Pseudorange = GNSSData[i][3];
+            satelliteData.RawPseudorange = GNSSData[i][4];
+            satelliteData.Snr = GNSSData[i][5];
+            satelliteData.ErrTropo = GNSSData[i][6];
+            satelliteData.ErrIono = GNSSData[i][7];
+            satelliteData.SatClkErr = GNSSData[i][8];
 
-            bool doubleBreak = false;
-            for(int k = 0; k<SatPos.size();k++){
-                if (SatPos[k].satId == satelliteData.satId){
+            std::vector<double> a;
+            a.insert(a.end(), { GNSSData[i][9], GNSSData[i][10], GNSSData[i][11]});
+            Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+            satelliteData.satSystemId = GNSSData[i][12];
 
-                    for(int l = 0; l< SatPos[k].rawData.size();l++) {
-
-                        if(SatPos[k].rawData[l][0]== epochData.epochTime) {
-                           
-                        std::vector<double> a = std::vector<double>(SatPos[k].rawData[j].begin() + 1, SatPos[k].rawData[j].end());
-                        Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
-
-                        satelliteData.p_WE = p_WE_;
-
-                        doubleBreak = true;
-                        break;  
-                        }   
-                    }
-                }
-                if(doubleBreak){break;}
-            }
             satDataVec.push_back(satelliteData);
             epochData.epochTime = GNSSData[i][1];
             i++;
@@ -281,25 +241,24 @@ struct rawSatData{
         epochData.satData = satDataVec;
         mGNSSFramework->epochData.push_back(epochData);
     }   
-/*
+
+
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
         cout << endl;
         cout << endl;
         cout<< " epoch idx: "<< mGNSSFramework->epochData[i].epochIdx<< " Time: " << mGNSSFramework->epochData[i].epochTime << " "<< endl;
         for(int j = 0; j< mGNSSFramework->epochData[i].satData.size(); j++){
             cout << "satid: " << mGNSSFramework->epochData[i].satData[j].satId << endl;
-            cout << "pr: " << mGNSSFramework->epochData[i].satData[j].pr << endl;
+            cout << "pr: " << mGNSSFramework->epochData[i].satData[j].Pseudorange << endl;
             cout << "pos: " << mGNSSFramework->epochData[i].satData[j].p_WE << endl;
 
         }
 
 
     }
-*/
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
-
 
     mpLocalMapper->mGNSSFramework = mGNSSFramework;
     mpTracker->mGNSSFramework = mGNSSFramework;
@@ -414,7 +373,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         }
         else if(mbResetActiveMap)
         {
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -489,7 +448,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         }
         else if(mbResetActiveMap)
         {
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -565,7 +524,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
         else if(mbResetActiveMap)
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -1479,7 +1438,7 @@ void System::ChangeDataset()
 {
     if(mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
     {
-        //mpTracker->ResetActiveMap();
+        mpTracker->ResetActiveMap();
     }
     else
     {

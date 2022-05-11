@@ -1818,7 +1818,7 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-        //mpSystem->ResetActiveMap();
+        mpSystem->ResetActiveMap();
         return;
     }
 
@@ -1851,7 +1851,7 @@ void Tracking::Track()
                     cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
                     if(!pCurrentMap->GetIniertialBA2())
                     {
-                        //mpSystem->ResetActiveMap();
+                        mpSystem->ResetActiveMap();
                     }
                     else
                     {
@@ -1861,7 +1861,7 @@ void Tracking::Track()
                 else
                 {
                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                 }
                 return;
             }
@@ -2032,7 +2032,7 @@ void Tracking::Track()
 
                     if (pCurrentMap->KeyFramesInMap()<10)
                     {
-                        //mpSystem->ResetActiveMap();
+                        mpSystem->ResetActiveMap();
                         Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
                     }else
                         CreateMapInAtlas();
@@ -2163,7 +2163,7 @@ void Tracking::Track()
                 if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                 }
 
                 mState=RECENTLY_LOST;
@@ -2213,7 +2213,7 @@ void Tracking::Track()
 
     // eTEST1
     //if(true){ // If data is loaded
-    /*
+    
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
 
@@ -2236,8 +2236,8 @@ void Tracking::Track()
         }
 
   //  }
-*/
-/*
+
+
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
 
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
@@ -2251,7 +2251,6 @@ void Tracking::Track()
             GNSS_counter++;
         }
 
-*/
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
@@ -2331,14 +2330,14 @@ void Tracking::Track()
         {
             if(pCurrentMap->KeyFramesInMap()<=10)
             {
-                //mpSystem->ResetActiveMap();
+                mpSystem->ResetActiveMap();
                 return;
             }
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 if (!pCurrentMap->isImuInitialized())
                 {
                     Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                     return;
                 }
 
@@ -2625,6 +2624,7 @@ void Tracking::CreateInitialMapMonocular()
         mpAtlas->AddMapPoint(pMP);
     }
 
+            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
 
     // Update Connections
     pKFini->UpdateConnections();
@@ -2647,7 +2647,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
-        //mpSystem->ResetActiveMap();
+        mpSystem->ResetActiveMap();
         return;
     }
 

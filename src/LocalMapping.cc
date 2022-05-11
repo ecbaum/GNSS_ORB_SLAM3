@@ -1197,8 +1197,6 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         cout << "Too few KFs in map:  " <<mpAtlas->KeyFramesInMap() <<  endl;
         return;
     }
-     cout << "Enough KFs in map" << endl;
-     cout << "Checkpoint LM 1: "<< endl;
     // Retrieve all keyframe in temporal order
     list<KeyFrame*> lpKF;
     KeyFrame* pKF = mpCurrentKeyFrame;
@@ -1214,7 +1212,6 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
          cout << " vpKF.size()<nMinKF "<< endl;
         return;
         }
-    cout << "Checkpoint LM 2: "<< endl;
 
     mFirstTs=vpKF.front()->mTimeStamp;
     if(mpCurrentKeyFrame->mTimeStamp-mFirstTs<minTime){
