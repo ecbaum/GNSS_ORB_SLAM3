@@ -38,11 +38,14 @@
 #include <vector>
 #include <sstream>
 #include "G2oTypes.h"
+//#include "se3quat.h"
 
 namespace ORB_SLAM3
 {
 vector<vector<double>> readGNSS(const string &filenames);
 vector<string> readTextFile(const string &filename);
+void readPosRotTrans(const string &filename, Eigen::Vector3d &p_WE_WG, Eigen::Matrix3d &R_WE_WG, Vector7d &T_WG_WL);
+
 
 Verbose::eLevel Verbose::th = Verbose::VERBOSITY_QUIET; //GNSS setVerbose , setVerbosity , verboseTh
 
@@ -195,11 +198,24 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     
     GNSSFramework * mGNSSFramework = new GNSSFramework();
     // Give path to GNSS file to be read. 
-    string pathSPP = "../data/MH_01_easy/mav0/2021-05-17_HK_SPP.csv";
-    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message.csv";
+    string pathSPP = "../data/MH_01_easy/mav0/gt.csv";
+    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message_m8t_clk_corr.csv";
+    string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
     vector<vector<double>> GNSSData;
+    /*
+    Eigen::Vector3d p_WE_WG_;    
+    Eigen::Matrix3d R_WE_WG_;
+    Vector7d T_WG_WL_;
+    readPosRotTrans(pathPosRotTrans, p_WE_WG_,R_WE_WG_, T_WG_WL_);
+    g2o::SE3Quat T_WG_WL; 
+    T_WG_WL.fromVector(T_WG_WL_);
+    mGNSSFramework->R_WE_WG = R_WE_WG_;
+    mGNSSFramework->p_WE_WG =p_WE_WG_ ;
+    //mGNSSFramework->T_WG_WL =T_WG_WL;
 
-    
+
+*/
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
@@ -214,8 +230,12 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     for( int j =1; j< GNSSData.back()[0];j++){
         EpochData epochData;
 
+        
         epochData.epochIdx = j;
+        //epochData.rClockBiasPrior = -161.38852905644*double(j) -106860.962614518; 
+        //epochData.rClockBiasPrior = -5.38334186700722*1e-7*double(j) - 0.000356449803065153;
         epochData.rClockBiasPrior = 0.0;
+
         vector<SatelliteData> satDataVec;
 
         while(GNSSData[i][0] == j){
@@ -232,6 +252,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             std::vector<double> a;
             a.insert(a.end(), { GNSSData[i][9], GNSSData[i][10], GNSSData[i][11]});
             Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+            satelliteData.p_WE = p_WE_;
             satelliteData.satSystemId = GNSSData[i][12];
 
             satDataVec.push_back(satelliteData);
@@ -242,7 +263,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mGNSSFramework->epochData.push_back(epochData);
     }   
 
-
+/*
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
         cout << endl;
         cout << endl;
@@ -256,6 +277,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
 
     }
+    */
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
@@ -1657,8 +1679,41 @@ vector<string> readTextFile(const string &filename)
    
     }
 }
+//Eigen::Vector3d &p_WE_WG, Eigen::Matrix3d &R_WE_WG,
+void readPosRotTrans(const string &filename, Eigen::Vector3d &p_WE_WG, Eigen::Matrix3d &R_WE_WG, Vector7d &T_WG_WL){
+  ifstream PosRotTrans;
+    PosRotTrans.open(filename.c_str());
+   // vTimeStamps.reserve(5000);
+    //vAcc.reserve(5000);
+    //vGyro.reserve(5000);
+    Eigen::Quaternion<double> q_;
+    while(!PosRotTrans.eof())
+    {
+        string s;
+        getline(PosRotTrans,s);
+        if (s[0] == '#')
+            continue;
 
+        if(!s.empty())
+        {
+            string item;
+            size_t pos = 0;
+            double data[18];
+            int count = 0;
+            while ((pos = s.find(',')) != string::npos) {
+                item = s.substr(0, pos);
+                data[count++] = stod(item);
+                s.erase(0, pos + 1);
+            }
+            item = s.substr(0, pos);
+            data[18] = stod(item);
 
+            p_WE_WG << data[0],data[1],data[2]; 
+            R_WE_WG << data[3], data[4], data[5], data[6], data[7] ,data[8], data[9], data[10], data[11]; 
+            T_WG_WL << data[12] ,data[13], data[14], data[15], data[16], data[17], data[18]; 
+        }
+    }
+}
 
 
 

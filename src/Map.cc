@@ -104,8 +104,9 @@ void Map::EraseMapPoint(MapPoint *pMP)
     // Delete the MapPoint
 }
 
-void Map::EraseKeyFrame(KeyFrame *pKF)
-{   if(!pKF->fGF || !pKF->fSPPF){
+void Map::EraseKeyFrame(KeyFrame *pKF) //GNSS
+{   if(pKF->fGF){ cout << " Försökte ta bort KF :: " << pKF->mnId<< endl; return;}
+
         unique_lock<mutex> lock(mMutexMap);
         mspKeyFrames.erase(pKF);
         if(mspKeyFrames.size()>0)
@@ -124,7 +125,7 @@ void Map::EraseKeyFrame(KeyFrame *pKF)
 
         // TODO: This only erase the pointer.
         // Delete the MapPoint
-    }
+    
 }
 
 void Map::SetReferenceMapPoints(const vector<MapPoint *> &vpMPs)
@@ -213,10 +214,10 @@ void Map::SetStoredMap()
 }
 
 void Map::clear()
-{
+{ cout << "Map Clear Körs: " << endl; 
 //    for(set<MapPoint*>::iterator sit=mspMapPoints.begin(), send=mspMapPoints.end(); sit!=send; sit++)
 //        delete *sit;
-
+return;
     for(set<KeyFrame*>::iterator sit=mspKeyFrames.begin(), send=mspKeyFrames.end(); sit!=send; sit++)
     {
         KeyFrame* pKF = *sit;

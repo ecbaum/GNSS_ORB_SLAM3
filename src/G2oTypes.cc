@@ -863,7 +863,7 @@ Eigen::Matrix3d Skew(const Eigen::Vector3d &w)
 //Erik
 
 //Methods
-
+/*
 bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
     //todo: detect map reset?
     
@@ -875,19 +875,56 @@ bool GNSSFramework::checkInitialization(int N_GKF, KeyFrame * cKF){
     if(!cKF->fSPPF){
         return false;
         }
-    
+    //cout << "num gkf" <<  N_GKF << endl;
     if(N_GKF > KeyFrameThreshold){
         if(!bInitalized){setupInitialization(cKF);}
-        cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
+        //cout << "Optimization " << initOptCounter+1 << " / " << initOptThreshold << " for GNSS initalization started" << endl;
         initOptCounter += 1;
         return true;
     }else{
-        cout << "   #GKF needed for init:    " << N_GKF << " / " << (KeyFrameThreshold+1) << endl;
+        //cout << "   #GKF needed for init:    " << N_GKF << " / " << (KeyFrameThreshold+1) << endl;
         initOptCounter = 0;
         return false;
     }
 }
 
+*/
+
+
+bool GNSSFramework::checkInitialization(){
+
+//todo: Räkna antal i listan
+int n = p_SPP.size();
+if(initOptCounter >= initOptThreshold){
+finishedInitOp = true;
+return false;
+}
+
+
+
+if(n > KeyFrameThreshold){
+
+if(!bInitalized){setupInitialization();}
+
+cout << "Optimization " << initOptCounter << " / " << initOptThreshold << " for GNSS initalization started" << endl;
+
+initOptCounter += 1;
+
+return true;
+
+}else{
+
+cout << " #GKF needed for init: " << n << " / " << (KeyFrameThreshold+1) << endl;
+
+initOptCounter = 0;
+
+return false;
+
+}
+
+}
+
+/*
 void GNSSFramework::setupInitialization(KeyFrame * cKF){
 
 
@@ -929,7 +966,45 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
     bInitalized = true;
 
 }
+*/
+void GNSSFramework::setupInitialization(){
+// Set transform from ENU to local to identity
 
+Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
+Eigen::Vector3d * t_ = new Eigen::Vector3d();
+
+r_->setIdentity();
+t_->setZero();
+
+T_WG_WL.setRotation(*static_cast<const Eigen::Quaterniond*>(r_));
+T_WG_WL.setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
+
+// Set rotation and traslation from ECEF to ENU in GNSS framework
+
+double R11, R12, R13, R21, R22, R23, R31, R32, R33, phi, lambda, deg2rad;
+
+Eigen::Matrix3d R_WG_WE;
+deg2rad = 3.141592653589793/180;
+Eigen::Vector3d geodeticCoordinates = p_SPP[0];
+
+p_WE_WG = GeodeticToECEF(geodeticCoordinates);
+
+
+phi = geodeticCoordinates[0]*deg2rad;
+lambda = geodeticCoordinates[1]*deg2rad;
+
+R11 = -sin(lambda); R12 = cos(lambda); R13 = 0;
+R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
+R31 = -cos(phi)*cos(lambda); R32 = cos(phi)*sin(lambda); R33 = sin(phi);
+
+R_WG_WE.row(0) << R11, R12, R13;
+R_WG_WE.row(1) << R21, R22, R23;
+R_WG_WE.row(2) << R31, R32, R33;
+
+R_WE_WG = R_WG_WE.transpose();
+bInitalized = true;
+
+}
 
 Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
@@ -955,7 +1030,7 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 }
 
 
-Eigen::Vector3d EdgeSPPToLocal::ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates){
+Eigen::Vector3d EdgeSPPToLocal::ECEFToENU(Eigen::Vector3d &p_WE_gl){
     p_WG_gl = R_WE_WG.transpose() * (p_WE_gl - p_WE_WG); 
     return p_WG_gl; 
 }

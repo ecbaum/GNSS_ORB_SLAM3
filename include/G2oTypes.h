@@ -872,20 +872,21 @@ struct EpochData{
     double rClockBiasPrior;         // Prior estimate of reciever clock bias w.r.t. satellite constellation
 };
 
+
 class GNSSFramework
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     GNSSFramework(){
         initOptCounter = 0;
-        initOptThreshold = 3;
-        KeyFrameThreshold = 4;
+        initOptThreshold = 1;
+        KeyFrameThreshold = 7;
         bInitalized = false;
         finishedInitOp = false;
     }
 
-    void setupInitialization(KeyFrame * cKF);
-    bool checkInitialization(int N_KF, KeyFrame * cKF);
+    void setupInitialization();
+    bool checkInitialization();
     void setENUtoLocal(g2o::SE3Quat _T){T_WG_WL = _T;}
     g2o::SE3Quat getENUtoLocal(){return T_WG_WL;}
     vector<EpochData> epochData;
@@ -903,6 +904,12 @@ public:
     bool bInitalized;
     bool finishedInitOp;
     int mnId = 10000000;  
+    double s; 
+        
+    vector<Eigen::Vector3d> p_SPP;
+    vector<Eigen::Vector3d> p_Local;
+
+
 
     // Optimizer vertex ID for reciever and satellite clock biases
     int recClockBiasID(int epochIdx){return mnId + 1 + epochIdx;}
@@ -911,7 +918,7 @@ public:
 };
 
 
-class EdgeSPPToLocal : public g2o::BaseUnaryEdge<3,Eigen::Vector3d,g2o::VertexSE3Expmap>
+class EdgeSPPToLocal : public g2o::BaseMultiEdge<3,Eigen::Vector3d>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
@@ -919,6 +926,7 @@ public:
     EdgeSPPToLocal(GNSSFramework * mGNSSFramework){
         p_WE_WG = mGNSSFramework->p_WE_WG;
         R_WE_WG = mGNSSFramework->R_WE_WG;
+        resize(2);
 
         Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
         setInformation(Info);
@@ -926,6 +934,7 @@ public:
     EdgeSPPToLocal(){
         Eigen::Matrix<double, 3, 3> Info = Eigen::Matrix<double, 3, 3>::Identity(3,3);
         setInformation(Info);
+        resize(2);
     }
 
     virtual bool read(std::istream& is){return false;}
@@ -942,21 +951,22 @@ public:
     Eigen::Vector3d p_WG_gl;               // gl expressed in {WG}, ENU, calculated from p_WE_gl and p_WE_WG
 
     void setLocalPosition(KeyFrame *gKF){p_WL_gl = gKF->GetPose().translation().cast<double>();};
-    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl, Eigen::Vector3d &geodeticCoordinates);
+    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl);
 
     void computeError(){
 
-        p_WE_gl = GeodeticToECEF(geodeticCoordinates);         // From Geodetic to reciever to ECEF to reciever
-        p_WG_gl = ECEFToENU(p_WE_gl, geodeticCoordinates);     // From ECEF to reciever to ENU to reciever
+    p_WE_gl = GeodeticToECEF(geodeticCoordinates); // From Geodetic to reciever to ECEF to reciever
+    p_WG_gl = ECEFToENU(p_WE_gl); // From ECEF to reciever to ENU to reciever
+    const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
+    const VertexScale* VS = static_cast<const VertexScale*>(_vertices[1]);
 
-        const g2o::VertexSE3Expmap* TF = static_cast<const g2o::VertexSE3Expmap*>(_vertices[0]);
-        _error << p_WG_gl - TF->estimate().map(p_WL_gl);
-
-        /*
+    _error << p_WG_gl - VS->estimate()*TF->estimate().map(p_WL_gl);
+        
         cout << "   -init error:   ";
-        for(int i=0;i<3;i++){ cout <<  _error[i] << "    "; }
+        cout << _error.norm();
+       // for(int i=0;i<3;i++){ cout <<  (_error[i]) << "    "; }
         cout << endl;
-        */
+    
 
     }
 };  
@@ -1029,6 +1039,8 @@ public:
         p_WE_WG_ = framework->p_WE_WG;
         R_WE_WG_ = framework->R_WE_WG;
         p_b_g_   = framework->p_b_g;
+        s = framework->s;
+        cout << "Scale G20H: " << s << endl;
         resize(6);
 
     }
@@ -1050,6 +1062,7 @@ public:
     double pr_;                     // Psuedorange measurement
     double b_s;                     // Satellite bias
     Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
+    double s;
 
     void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
         /* Todo:
@@ -1063,7 +1076,7 @@ public:
         // Satellite data
         pr_ = framework->epochData[epochIdx].satData[satIdx].Pseudorange;
         // b_s = framework->epochData[epochIdx].satData[satIdx].bias;
-        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE * 1000;
+        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE;
 
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
         setInformation(Info);
@@ -1096,13 +1109,19 @@ public:
         const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb;// - T_e_k; 
 
         const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
-        const Eigen::Vector3d P_WG_WL = VT->estimate().translation();
+        const Eigen::Vector3d P_WG_WL = VT->estimate().translation() ; 
 
-        const double pr =  static_cast<const double>(pr_);
-        const double pr_error = ( P_WE_Sie - R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG).norm() + c*(b_r->estimate() - b_s) - pr;
+        const double pr =  static_cast<const double>(pr_);  
+        const double pr_error = ( P_WE_Sie - ( R_WE_WG*s*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG)).norm() + c* (b_r->estimate()) - pr;
 
         _error = Eigen::Matrix<double,1,1 > (pr_error);
-
+      //  cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;
+       // cout << "R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG. : " << endl << R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG << endl;
+       // cout << "PR:  " << pr << endl;
+        //cout << "P_WL_Gme:\n  " << P_WL_Gme << endl;
+       // cout << "Norm: "<<  norm << endl;
+        //cout << "Rec_Bias: " << b_r->estimate() << endl;
+        //cout<< "Error:   " << _error << endl; 
     }
 };
 

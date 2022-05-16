@@ -91,7 +91,6 @@ KeyFrame::KeyFrame(Frame &F, Map *pMap, KeyFrameDatabase *pKFDB):
         mbHasVelocity = true;
     }
     fGF = false;
-    fSPPF = false;
     mImuBias = F.mImuBias;
     SetPose(F.GetPose());
     mnOriginMapId = pMap->GetId();
@@ -697,12 +696,13 @@ void KeyFrame::SetBadFlag()
             mpParent->EraseChild(this);
             mTcp = mTcw * mpParent->GetPoseInverse();
         }
-        mbBad = true;
+       mbBad = true;
     }
 
-
+    //GNSS
     mpMap->EraseKeyFrame(this);
     mpKeyFrameDB->erase(this);
+    
 }
 
 bool KeyFrame::isBad()

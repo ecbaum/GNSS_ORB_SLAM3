@@ -439,10 +439,14 @@ public:
     double timeStampGNSS;
     double GNSS_deltaT;
     bool bImu;
-    bool fSPPF;
     bool fGF;
     float mPosb_x, mPosb_y, mPosb_z;
     int epochIdx;
+     // Bad flags egentligen protected
+    bool mbNotErase;
+    bool mbToBeErased;
+    bool mbBad;    
+
     //E
 
     //bool mbHasHessian;
@@ -499,10 +503,6 @@ protected:
     std::vector<long unsigned int> mvBackupLoopEdgesId;
     std::vector<long unsigned int> mvBackupMergeEdgesId;
 
-    // Bad flags
-    bool mbNotErase;
-    bool mbToBeErased;
-    bool mbBad;    
 
     float mHalfBaseline; // Only for visualization
 

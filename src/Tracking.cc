@@ -26,7 +26,7 @@
 #include "KannalaBrandt8.h"
 #include "MLPnPsolver.h"
 #include "GeometricTools.h"
-
+#include "G2oTypes.h"
 #include <iostream>
 
 #include <mutex>
@@ -2225,13 +2225,14 @@ void Tracking::Track()
         double currentTime = mCurrentFrame.mTimeStamp;
         double prevTime = mCurrentFrame.mpPrevFrame->mTimeStamp;
         double epochTime = mGNSSFramework->epochData[epoch_idx_counter].epochTime;
-
+       // cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime  << "\n"  ;
         // Associate data
         if( prevTime < epochTime && epochTime <  currentTime ){
+            cout << "Insert New GKF \n";
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
-            mCurrentFrame.convertToGNSS = false;
+            mCurrentFrame.convertToGNSS = true;
             epoch_idx_counter++;
         }
 
@@ -2239,16 +2240,19 @@ void Tracking::Track()
 
 
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
-
+//    cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   " <<  GNSS_data[GNSS_counter][0] << "\n"  ;
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
-            //cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
-            SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
-            SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
-            SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
-            SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
-            SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
-            GNSS_counter++;
+        std::vector<double> a;
+        a.insert(a.end(), { GNSS_data[GNSS_counter][1],GNSS_data[GNSS_counter][2],GNSS_data[GNSS_counter][3]});
+        Eigen::Vector3d p_SPP_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+        
+        std::vector<double> b;
+        b.insert(b.end(), { double(mCurrentFrame.GetPose().translation()[0]),double(mCurrentFrame.GetPose().translation()[1]),double(mCurrentFrame.GetPose().translation()[2])});
+        Eigen::Vector3d p_Local_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(b.data(), b.size());
+
+        mGNSSFramework->p_Local.push_back(p_Local_);
+        mGNSSFramework->p_SPP.push_back(p_SPP_);
+        GNSS_counter++;
         }
 
         // Update drawer
@@ -2296,7 +2300,7 @@ void Tracking::Track()
             std::chrono::steady_clock::time_point time_StartNewKF = std::chrono::steady_clock::now();
 #endif
             bool bNeedKF = NeedNewKeyFrame();
-              if(mCurrentFrame.convertToGNSS || mCurrentFrame.convertToGNSSSpp ){
+              if(mCurrentFrame.convertToGNSS){
                 CreateNewKeyFrame();
             }else
             {
@@ -2624,7 +2628,6 @@ void Tracking::CreateInitialMapMonocular()
         mpAtlas->AddMapPoint(pMP);
     }
 
-            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
 
     // Update Connections
     pKFini->UpdateConnections();
@@ -3290,19 +3293,11 @@ void Tracking::CreateNewKeyFrame()
   if(mCurrentFrame.convertToGNSS){
         //eTest1
         pKF->fGF = true;
-        pKF->SetNotErase();
+            pKF->SetNotErase();
+        
         pKF->timeStampGNSS = mGNSSFramework->epochData[mCurrentFrame.epochIdx].epochTime;
         pKF->GNSS_deltaT = mGNSSFramework->epochData[mCurrentFrame.epochIdx].dT;
         pKF->epochIdx = mCurrentFrame.epochIdx;
-    }
-
-    if(mCurrentFrame.convertToGNSSSpp){
-
-        //eTest1
-        pKF->fSPPF = true;
-        pKF->SetNotErase();
-        pKF->SPP_geodetic = SPP_geodetic; 
-        SPP_geodetic.clear();  
     }
 
 
