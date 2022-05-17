@@ -3113,14 +3113,14 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     int N = vpOptimizableKFs.size();
 //GNSS
     int gKFcounter = 0;
-    cout << "Start ::::::::::::::::::::" << endl;
+    //cout << "Start ::::::::::::::::::::" << endl;
     for(int i=0;i<N;i++) {
         KeyFrame* pKFi = vpOptimizableKFs[i];
-        cout<< "KFID: " << pKFi->mnId <<" SPP: "<< pKFi->fSPPF<< endl;
+        //cout<< "KFID: " << pKFi->mnId <<" SPP: "<< pKFi->fSPPF<< endl;
 
         if(pKFi->fSPPF){gKFcounter++;}
     }
-        cout << "End ::::::::::::::::::::" << endl;
+        //cout << "End ::::::::::::::::::::" << endl;
 
 
     if(!mGNSSFramework->checkInitialization(gKFcounter, pKF)){return;} // Check if initialization has to run

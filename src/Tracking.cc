@@ -607,7 +607,7 @@ void Tracking::newParameterLoader(Settings *settings) {
     Sophus::SE3f Tbc = settings->Tbc();
     mInsertKFsLost = settings->insertKFsWhenLost();
     mImuFreq = settings->imuFrequency();
-    mImuPer = 0.001; //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN?
+    mImuPer =(1 / 400); //1.0 / (double) mImuFreq;     //TODO: ESTO ESTA BIEN NO?
     float Ng = settings->noiseGyro();
     float Na = settings->noiseAcc();
     float Ngw = settings->gyroWalk();
@@ -1344,7 +1344,7 @@ bool Tracking::ParseIMUParamFile(cv::FileStorage &fSettings)
     if(!node.empty() && node.isInt())
     {
         mImuFreq = node.operator int();
-        mImuPer = 0.001; //1.0 / (double) mImuFreq;
+        mImuPer = (1 / 400); //0.001; //1.0 / (double) mImuFreq;
     }
     else
     {
@@ -1742,7 +1742,20 @@ void Tracking::PreintegrateIMU()
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
-    
+
+    if(mCurrentFrame.mpLastKeyFrame){
+        const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
+        const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
+        const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
+        const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+        const float t12 = mpImuPreintegratedFromLastKF->dT;
+        Eigen::Vector3f diff = Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
+        //double deltaP = mCurrentFrame.mpImuPreintegrated->GetDeltaPosition(mCurrentFrame.mImuBias).norm();
+        double deltaT_imu = mCurrentFrame.mTimeStamp - mCurrentFrame.mpLastKeyFrame->mTimeStamp;
+        cout << "   IMU: DeltaP/deltaT = " << double(diff.norm())/deltaT_imu << endl;
+        cout << "ACC: " <<  accBetweenKFs.end()[1] << endl;
+
+    }
     
 
     //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
@@ -2239,12 +2252,25 @@ void Tracking::Track()
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
             cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = true; // GNSSOFF
+            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
+           if(GNSS_counter>0){
+                double t_spp_1 = GNSS_data[GNSS_counter-1][0];
+                double t_spp_2 = GNSS_data[GNSS_counter][0];
+                std::vector<double> a;
+                a.insert(a.end(), { GNSS_data[GNSS_counter-1][1], GNSS_data[GNSS_counter-1][2], GNSS_data[GNSS_counter-1][3] } );
+                Eigen::Vector3d spp1 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+                std::vector<double> b;
+                b.insert(b.end(), { GNSS_data[GNSS_counter][1], GNSS_data[GNSS_counter][2], GNSS_data[GNSS_counter][3] });
+                Eigen::Vector3d spp2 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(b.data(), b.size());
+                double spp_vel = (GeodeticToECEF(spp2) - GeodeticToECEF(spp1)).norm()/(t_spp_2 - t_spp_1);
+                cout << "   SPP: DeltaP/deltaT = " << spp_vel << endl;
+
+            }
             GNSS_counter++;
         }
 
@@ -3540,30 +3566,53 @@ void Tracking::UpdateLocalPoints()
         }
     }
 }
+  
 
 
 void Tracking::UpdateLocalKeyFrames()
+
 {
+
     // Each map point vote for the keyframes in which it has been observed
+
     map<KeyFrame*,int> keyframeCounter;
+
     if(!mpAtlas->isImuInitialized() || (mCurrentFrame.mnId<mnLastRelocFrameId+2))
+
     {
+
         for(int i=0; i<mCurrentFrame.N; i++)
+
         {
+
             MapPoint* pMP = mCurrentFrame.mvpMapPoints[i];
+
             if(pMP)
+
             {
+
                 if(!pMP->isBad())
+
                 {
+
                     const map<KeyFrame*,tuple<int,int>> observations = pMP->GetObservations();
+
                     for(map<KeyFrame*,tuple<int,int>>::const_iterator it=observations.begin(), itend=observations.end(); it!=itend; it++)
+
                         keyframeCounter[it->first]++;
+
                 }
+
                 else
+
                 {
+
                     mCurrentFrame.mvpMapPoints[i]=NULL;
+
                 }
+
             }
+
         }
     }
     else

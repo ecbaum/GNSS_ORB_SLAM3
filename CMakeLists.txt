@@ -164,15 +164,15 @@ ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 #endif()
 
 #Stereo examples
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo)
 
 #add_executable(stereo_kitti
  #       Examples/Stereo/stereo_kitti.cc)
 #target_link_libraries(stereo_kitti ${PROJECT_NAME})
 
-#add_executable(stereo_euroc
- #       Examples/Stereo/stereo_euroc.cc)
-#target_link_libraries(stereo_euroc ${PROJECT_NAME})
+add_executable(stereo_euroc
+        Examples/Stereo/stereo_euroc.cc)
+target_link_libraries(stereo_euroc ${PROJECT_NAME})
 
 #add_executable(stereo_tum_vi
  #       Examples/Stereo/stereo_tum_vi.cc)
@@ -239,11 +239,11 @@ target_link_libraries(mono_inertial_euroc ${PROJECT_NAME})
 #endif()
 
 #Stereo Inertial examples
-#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo-Inertial)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/Examples/Stereo-Inertial)
 
-#add_executable(stereo_inertial_euroc
-#        Examples/Stereo-Inertial/stereo_inertial_euroc.cc)
-#target_link_libraries(stereo_inertial_euroc ${PROJECT_NAME})
+add_executable(stereo_inertial_euroc
+        Examples/Stereo-Inertial/stereo_inertial_euroc.cc)
+target_link_libraries(stereo_inertial_euroc ${PROJECT_NAME})
 
 #add_executable(stereo_inertial_tum_vi
  #       Examples/Stereo-Inertial/stereo_inertial_tum_vi.cc)
