@@ -261,6 +261,7 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
             double t;
             ss >> t;
             vTimeStamps.push_back(t/1e9);
+            
 
         }
     }

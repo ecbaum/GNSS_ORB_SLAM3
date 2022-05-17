@@ -50,7 +50,7 @@ Camera.fps: 15
 Camera.RGB: 1
 
 Stereo.ThDepth: 60.0
-Stereo.b: 0.012
+#Stereo.b: 0.012
 Stereo.T_c1_c2: !!opencv-matrix
   rows: 4
   cols: 4

@@ -195,8 +195,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     
     GNSSFramework * mGNSSFramework = new GNSSFramework();
     // Give path to GNSS file to be read. 
-    string pathSPP = "../data/MH_01_easy/mav0/2021-05-17_HK_SPP.csv";
-    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message.csv";
+    string pathSPP = "../data/MH_01_easy/mav0/gt.csv";
+    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message_m8t_clk_corr.csv";
     vector<vector<double>> GNSSData;
 
     
@@ -232,8 +232,8 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             std::vector<double> a;
             a.insert(a.end(), { GNSSData[i][9], GNSSData[i][10], GNSSData[i][11]});
             Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+            satelliteData.p_WE = p_WE_;
             satelliteData.satSystemId = GNSSData[i][12];
-
             satDataVec.push_back(satelliteData);
             epochData.epochTime = GNSSData[i][1];
             i++;
@@ -242,7 +242,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         mGNSSFramework->epochData.push_back(epochData);
     }   
 
-
+/*
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
         cout << endl;
         cout << endl;
@@ -253,9 +253,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             cout << "pos: " << mGNSSFramework->epochData[i].satData[j].p_WE << endl;
 
         }
+        }
+*/
 
-
-    }
+    
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);
@@ -829,18 +830,21 @@ void System::SaveTrajectoryEuRoC(const string &filename)
             Sophus::SE3f Twb = (pKF->mImuCalib.mTbc * (*lit) * Trw).inverse();
             Eigen::Quaternionf q = Twb.unit_quaternion();
             Eigen::Vector3f twb = Twb.translation();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()<< endl;
         }
         else
         {
             Sophus::SE3f Twc = ((*lit)*Trw).inverse();
             Eigen::Quaternionf q = Twc.unit_quaternion();
             Eigen::Vector3f twc = Twc.translation();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()<< endl;
         }
 
         // cout << "5" << endl;
     }
+
+
+
     //cout << "end saving trajectory" << endl;
     f.close();
     cout << endl << "End of saving trajectory to " << filename << " ..." << endl;
@@ -934,14 +938,14 @@ void System::SaveTrajectoryEuRoC(const string &filename, Map* pMap)
             Sophus::SE3f Twb = (pKF->mImuCalib.mTbc * (*lit) * Trw).inverse();
             Eigen::Quaternionf q = Twb.unit_quaternion();
             Eigen::Vector3f twb = Twb.translation();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << pKF->mnId << pKF->fSPPF<<endl;
         }
         else
         {
             Sophus::SE3f Twc = ((*lit)*Trw).inverse();
             Eigen::Quaternionf q = Twc.unit_quaternion();
             Eigen::Vector3f twc = Twc.translation();
-            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*(*lT) << " " <<  setprecision(9) << twc(0) << " " << twc(1) << " " << twc(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << pKF->mnId << pKF->fSPPF<<endl;
         }
 
         // cout << "5" << endl;
@@ -1168,7 +1172,7 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
             Sophus::SE3f Twb = pKF->GetImuPose();
             Eigen::Quaternionf q = Twb.unit_quaternion();
             Eigen::Vector3f twb = Twb.translation();
-            f << setprecision(6) << 1e9*pKF->mTimeStamp  << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*pKF->mTimeStamp  << " " <<  setprecision(9) << twb(0) << " " << twb(1) << " " << twb(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()<< " " << pKF->mnId<< " " << pKF->fSPPF << endl;
 
         }
         else
@@ -1176,7 +1180,7 @@ void System::SaveKeyFrameTrajectoryEuRoC(const string &filename)
             Sophus::SE3f Twc = pKF->GetPoseInverse();
             Eigen::Quaternionf q = Twc.unit_quaternion();
             Eigen::Vector3f t = Twc.translation();
-            f << setprecision(6) << 1e9*pKF->mTimeStamp << " " <<  setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w() << endl;
+            f << setprecision(6) << 1e9*pKF->mTimeStamp << " " <<  setprecision(9) << t(0) << " " << t(1) << " " << t(2) << " " << q.x() << " " << q.y() << " " << q.z() << " " << q.w()<< " " << pKF->mnId<< " " << pKF->fSPPF  << endl;
         }
     }
     f.close();

@@ -583,13 +583,15 @@ void KeyFrame::SetNotErase()
 
 void KeyFrame::SetErase()
 {
-    {
+    if(fSPPF){
+        return;
+    }
         unique_lock<mutex> lock(mMutexConnections);
         if(mspLoopEdges.empty())
         {
             mbNotErase = false;
         }
-    }
+
 
     if(mbToBeErased)
     {
@@ -599,6 +601,7 @@ void KeyFrame::SetErase()
 
 void KeyFrame::SetBadFlag()
 {
+    if(fSPPF){return;}
     {
         unique_lock<mutex> lock(mMutexConnections);
         if(mnId==mpMap->GetInitKFid())

@@ -904,6 +904,7 @@ void LocalMapping::InterruptBA()
 
 void LocalMapping::KeyFrameCulling()
 {
+
     // Check redundant keyframes (only local keyframes)
     // A keyframe is considered redundant if the 90% of the MapPoints it sees, are seen
     // in at least other 3 keyframes (in the same or finer scale)
@@ -923,7 +924,7 @@ void LocalMapping::KeyFrameCulling()
     const bool bInitImu = mpAtlas->isImuInitialized();
     int count=0;
 
-    // Compoute last KF from optimizable window:
+    // Compute last KF from optimizable window:
     unsigned int last_ID;
     if (mbInertial)
     {
@@ -1020,7 +1021,11 @@ void LocalMapping::KeyFrameCulling()
                 if(pKF->mnId>(mpCurrentKeyFrame->mnId-2))
                     continue;
 
-                if(pKF->mPrevKF && pKF->mNextKF)
+                if(pKF->fSPPF){
+                    continue;
+                }
+
+                if( pKF->mPrevKF && pKF->mNextKF)
                 {
                     const float t = pKF->mNextKF->mTimeStamp-pKF->mPrevKF->mTimeStamp;
 

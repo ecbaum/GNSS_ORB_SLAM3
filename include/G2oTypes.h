@@ -879,7 +879,7 @@ public:
     GNSSFramework(){
         initOptCounter = 0;
         initOptThreshold = 3;
-        KeyFrameThreshold = 4;
+        KeyFrameThreshold = 3;
         bInitalized = false;
         finishedInitOp = false;
     }

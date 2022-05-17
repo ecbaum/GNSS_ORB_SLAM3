@@ -3025,8 +3025,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         cout<< "kfbias az: " << kfBias.baz << endl;
         cout<< "kfbias gx: " << kfBias.bwx << endl;
         cout<< "kfbias gy: " << kfBias.bwy << endl;
-        cout<< "kfbias gz: " << kfBias.bwz << endl;
-        
+        cout<< "kfbias gz: " << kfBias.bwz << endl;  
 */
         VertexPose* VP = static_cast<VertexPose*>(optimizer.vertex(pKFi->mnId));
         Sophus::SE3f Tcw(VP->estimate().Rcw[0].cast<float>(), VP->estimate().tcw[0].cast<float>());
@@ -3112,12 +3111,17 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     }
 
     int N = vpOptimizableKFs.size();
-
+//GNSS
     int gKFcounter = 0;
+    cout << "Start ::::::::::::::::::::" << endl;
     for(int i=0;i<N;i++) {
         KeyFrame* pKFi = vpOptimizableKFs[i];
+        cout<< "KFID: " << pKFi->mnId <<" SPP: "<< pKFi->fSPPF<< endl;
+
         if(pKFi->fSPPF){gKFcounter++;}
     }
+        cout << "End ::::::::::::::::::::" << endl;
+
 
     if(!mGNSSFramework->checkInitialization(gKFcounter, pKF)){return;} // Check if initialization has to run
 

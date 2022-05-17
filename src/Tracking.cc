@@ -2221,7 +2221,6 @@ void Tracking::Track()
             cout << "   " << mCurrentFrame.mpPrevFrame->mTimeStamp << "  >  "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime << endl;
             epoch_idx_counter++;    
         }
-
         double currentTime = mCurrentFrame.mTimeStamp;
         double prevTime = mCurrentFrame.mpPrevFrame->mTimeStamp;
         double epochTime = mGNSSFramework->epochData[epoch_idx_counter].epochTime;
@@ -2237,12 +2236,10 @@ void Tracking::Track()
 
   //  }
 
-
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
-
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
-            //cout << "Insert NEW SPP keyframe" << endl; 
-            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
+            cout << "Insert NEW SPP keyframe" << endl; 
+            mCurrentFrame.convertToGNSSSpp = true; // GNSSOFF
             SPP_geodetic.push_back(mCurrentFrame.mTimeStamp); 
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][0]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
@@ -2624,7 +2621,6 @@ void Tracking::CreateInitialMapMonocular()
         mpAtlas->AddMapPoint(pMP);
     }
 
-            mCurrentFrame.convertToGNSSSpp = false; // GNSSOFF
 
     // Update Connections
     pKFini->UpdateConnections();
