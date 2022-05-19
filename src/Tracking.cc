@@ -547,14 +547,14 @@ void Tracking::newParameterLoader(Settings *settings) {
     }
 
     //TODO: missing image scaling and rectification
-    mImageScale = 1.0f;
-
+    mImageScale = 1.0; //Larger value = Smaller window
+    float Egenscale = 1.0; 
     mK = cv::Mat::eye(3,3,CV_32F);
-    mK.at<float>(0,0) = mpCamera->getParameter(0);
-    mK.at<float>(1,1) = mpCamera->getParameter(1);
-    mK.at<float>(0,2) = mpCamera->getParameter(2);
-    mK.at<float>(1,2) = mpCamera->getParameter(3);
-
+    mK.at<float>(0,0) = mpCamera->getParameter(0)* Egenscale;
+    mK.at<float>(1,1) = mpCamera->getParameter(1)* Egenscale;
+    mK.at<float>(0,2) = mpCamera->getParameter(2)* Egenscale;
+    mK.at<float>(1,2) = mpCamera->getParameter(3)* Egenscale;
+    cout << "mK" << mK << endl;
     mK_.setIdentity();
     mK_(0,0) = mpCamera->getParameter(0);
     mK_(1,1) = mpCamera->getParameter(1);
@@ -621,6 +621,7 @@ void Tracking::newParameterLoader(Settings *settings) {
 
 bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
 {
+    cout << "ParseCamParamFile"<< endl;
     mDistCoef = cv::Mat::zeros(4,1,CV_32F);
     cout << endl << "Camera Parameters: " << endl;
     bool b_miss_params = false;
@@ -629,7 +630,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
     if(sCameraName == "PinHole")
     {
         float fx, fy, cx, cy;
-        mImageScale = 1.f;
+        mImageScale = 1.0f; // Use this to fix the scaling issues GNSS.
 
         // Camera calibration parameters
         cv::FileNode node = fSettings["Camera.fx"];
@@ -784,12 +785,13 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
     }
     else if(sCameraName == "KannalaBrandt8")
     {
+       std::cerr << "This is KANNALA BRANDT " << endl;
         float fx, fy, cx, cy;
         float k1, k2, k3, k4;
-        mImageScale = 1.f;
+        mImageScale = 0.80f;
 
         // Camera calibration parameters
-        cv::FileNode node = fSettings["Camera.fx"];
+        cv::FileNode node = fSettings["Camera1.fx"];
         if(!node.empty() && node.isReal())
         {
             fx = node.real();
@@ -799,7 +801,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             std::cerr << "*Camera.fx parameter doesn't exist or is not a real number*" << std::endl;
             b_miss_params = true;
         }
-        node = fSettings["Camera.fy"];
+        node = fSettings["Camera1.fy"];
         if(!node.empty() && node.isReal())
         {
             fy = node.real();
@@ -810,7 +812,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             b_miss_params = true;
         }
 
-        node = fSettings["Camera.cx"];
+        node = fSettings["Camera1.cx"];
         if(!node.empty() && node.isReal())
         {
             cx = node.real();
@@ -821,7 +823,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             b_miss_params = true;
         }
 
-        node = fSettings["Camera.cy"];
+        node = fSettings["Camera1.cy"];
         if(!node.empty() && node.isReal())
         {
             cy = node.real();
@@ -833,7 +835,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
         }
 
         // Distortion parameters
-        node = fSettings["Camera.k1"];
+        node = fSettings["Camera1.k1"];
         if(!node.empty() && node.isReal())
         {
             k1 = node.real();
@@ -843,7 +845,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             std::cerr << "*Camera.k1 parameter doesn't exist or is not a real number*" << std::endl;
             b_miss_params = true;
         }
-        node = fSettings["Camera.k2"];
+        node = fSettings["Camera1.k2"];
         if(!node.empty() && node.isReal())
         {
             k2 = node.real();
@@ -854,7 +856,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             b_miss_params = true;
         }
 
-        node = fSettings["Camera.k3"];
+        node = fSettings["Camera1.k3"];
         if(!node.empty() && node.isReal())
         {
             k3 = node.real();
@@ -865,7 +867,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
             b_miss_params = true;
         }
 
-        node = fSettings["Camera.k4"];
+        node = fSettings["Camera1.k4"];
         if(!node.empty() && node.isReal())
         {
             k4 = node.real();
@@ -886,6 +888,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
         {
             if(mImageScale != 1.f)
             {
+                std::cerr <<"Imagecale Rescale: " << mImageScale << endl;
                 // K matrix parameters must be scaled.
                 fx = fx * mImageScale;
                 fy = fy * mImageScale;
@@ -923,6 +926,7 @@ bool Tracking::ParseCamParamFile(cv::FileStorage &fSettings)
         if(mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::IMU_RGBD){
             // Right camera
             // Camera calibration parameters
+            cout << " ENTER WO:" << endl;
             cv::FileNode node = fSettings["Camera2.fx"];
             if(!node.empty() && node.isReal())
             {
@@ -1636,6 +1640,9 @@ void Tracking::PreintegrateIMU()
 
     mvImuFromLastFrame.clear();
     mvImuFromLastFrame.reserve(mlQueueImuData.size());
+
+    cout << "The number of IMU measurements" << mlQueueImuData.size() << endl;
+
     if(mlQueueImuData.size() == 0)
     {
         Verbose::PrintMess("Not IMU data in mlQueueImuData!!", Verbose::VERBOSITY_NORMAL);
@@ -1742,6 +1749,25 @@ void Tracking::PreintegrateIMU()
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
+
+    if(mCurrentFrame.mpLastKeyFrame){
+        const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
+        const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
+        const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
+
+        const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+        const float t12 = mpImuPreintegratedFromLastKF->dT;
+
+
+        Eigen::Vector3f diff = Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
+
+        //double deltaP = mCurrentFrame.mpImuPreintegrated->GetDeltaPosition(mCurrentFrame.mImuBias).norm();
+        double deltaT_imu = mCurrentFrame.mTimeStamp - mCurrentFrame.mpLastKeyFrame->mTimeStamp;
+        cout << "   IMU: DeltaP/deltaT = " << double(diff.norm())/deltaT_imu << endl;
+
+
+
+    }
     
     
 
@@ -1818,7 +1844,7 @@ void Tracking::Track()
     if(mpLocalMapper->mbBadImu)
     {
         cout << "TRACK: Reset map because local mapper set the bad imu flag " << endl;
-        //mpSystem->ResetActiveMap();
+        mpSystem->ResetActiveMap();
         return;
     }
 
@@ -1851,7 +1877,7 @@ void Tracking::Track()
                     cout << "Timestamp jump detected. State set to LOST. Reseting IMU integration..." << endl;
                     if(!pCurrentMap->GetIniertialBA2())
                     {
-                        //mpSystem->ResetActiveMap();
+                        mpSystem->ResetActiveMap();
                     }
                     else
                     {
@@ -1861,7 +1887,7 @@ void Tracking::Track()
                 else
                 {
                     cout << "Timestamp jump detected, before IMU initialization. Reseting..." << endl;
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                 }
                 return;
             }
@@ -2032,7 +2058,7 @@ void Tracking::Track()
 
                     if (pCurrentMap->KeyFramesInMap()<10)
                     {
-                        //mpSystem->ResetActiveMap();
+                        mpSystem->ResetActiveMap();
                         Verbose::PrintMess("Reseting current map...", Verbose::VERBOSITY_NORMAL);
                     }else
                         CreateMapInAtlas();
@@ -2163,7 +2189,7 @@ void Tracking::Track()
                 if(!pCurrentMap->isImuInitialized() || !pCurrentMap->GetIniertialBA2())
                 {
                     cout << "IMU is not or recently initialized. Reseting active map..." << endl;
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                 }
 
                 mState=RECENTLY_LOST;
@@ -2212,7 +2238,7 @@ void Tracking::Track()
 #endif
 
     // eTEST1
-    if(true){ // If data is loaded
+    if(false){ // If data is loaded
 
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
@@ -2237,7 +2263,7 @@ void Tracking::Track()
 
     }
 
-
+if(false){ // If data is loaded
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
 
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
@@ -2248,9 +2274,22 @@ void Tracking::Track()
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
+            if(GNSS_counter>0){
+
+                double t_spp_1 = GNSS_data[GNSS_counter-1][0];
+                double t_spp_2 = GNSS_data[GNSS_counter][0];
+                std::vector<double> a;
+                a.insert(a.end(), { GNSS_data[GNSS_counter-1][1], GNSS_data[GNSS_counter-1][1], GNSS_data[GNSS_counter-1][1] } );
+                Eigen::Vector3d spp1 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+                std::vector<double> b;
+                b.insert(b.end(), { GNSS_data[GNSS_counter][1], GNSS_data[GNSS_counter][2], GNSS_data[GNSS_counter][3] });
+                Eigen::Vector3d spp2 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(b.data(), b.size());
+                double spp_vel = (GeodeticToECEF(spp2) - GeodeticToECEF(spp1)).norm()/(t_spp_2 - t_spp_1);
+               cout << "   SPP: DeltaP/deltaT = " << spp_vel << endl;
+            }
             GNSS_counter++;
         }
-
+}
 
         // Update drawer
         mpFrameDrawer->Update(this);
@@ -2331,14 +2370,14 @@ void Tracking::Track()
         {
             if(pCurrentMap->KeyFramesInMap()<=10)
             {
-                //mpSystem->ResetActiveMap();
+                mpSystem->ResetActiveMap();
                 return;
             }
             if (mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
                 if (!pCurrentMap->isImuInitialized())
                 {
                     Verbose::PrintMess("Track lost before IMU initialisation, reseting...", Verbose::VERBOSITY_QUIET);
-                    //mpSystem->ResetActiveMap();
+                    mpSystem->ResetActiveMap();
                     return;
                 }
 
@@ -2405,6 +2444,7 @@ void Tracking::StereoInitialization()
 
             if (!mFastInit && (mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA).norm()<0.5)
             {
+                cout << "ACC: " << (mCurrentFrame.mpImuPreintegratedFrame->avgA-mLastFrame.mpImuPreintegratedFrame->avgA).norm() << endl;
                 cout << "not enough acceleration" << endl;
                 return;
             }
@@ -2647,7 +2687,7 @@ void Tracking::CreateInitialMapMonocular()
     if(medianDepth<0 || pKFcur->TrackedMapPoints(1)<50) // TODO Check, originally 100 tracks
     {
         Verbose::PrintMess("Wrong initialization, reseting...", Verbose::VERBOSITY_QUIET);
-        //mpSystem->ResetActiveMap();
+        mpSystem->ResetActiveMap();
         return;
     }
 
@@ -3087,7 +3127,7 @@ bool Tracking::TrackLocalMap()
     mpLocalMapper->mnMatchesInliers=mnMatchesInliers;
     
 
-    cout << "MatchesInliers: " << mnMatchesInliers << endl;
+    //cout << "MatchesInliers: " << mnMatchesInliers << endl;
 
     if(mCurrentFrame.mnId<mnLastRelocFrameId+mMaxFrames && mnMatchesInliers<50)
         return false;
@@ -3289,7 +3329,7 @@ void Tracking::CreateNewKeyFrame()
 
   if(mCurrentFrame.convertToGNSS){
         //eTest1
-        pKF->fGF = true;
+        pKF->fGF = false;
         pKF->timeStampGNSS = mGNSSFramework->epochData[mCurrentFrame.epochIdx].epochTime;
         pKF->GNSS_deltaT = mGNSSFramework->epochData[mCurrentFrame.epochIdx].dT;
         pKF->epochIdx = mCurrentFrame.epochIdx;
@@ -3298,7 +3338,7 @@ void Tracking::CreateNewKeyFrame()
     if(mCurrentFrame.convertToGNSSSpp){
 
         //eTest1
-        pKF->fSPPF = true;
+        pKF->fSPPF = false;
         pKF->SPP_geodetic = SPP_geodetic; 
         SPP_geodetic.clear();  
     }

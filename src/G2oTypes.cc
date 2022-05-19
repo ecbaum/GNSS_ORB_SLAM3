@@ -635,6 +635,10 @@ void EdgeInertialGS::computeError()
     const Eigen::Vector3d er = LogSO3(dR.transpose()*VP1->estimate().Rwb.transpose()*VP2->estimate().Rwb);
     const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(s*(VV2->estimate() - VV1->estimate()) - g*dt) - dV;
     const Eigen::Vector3d ep = VP1->estimate().Rwb.transpose()*(s*(VP2->estimate().twb - VP1->estimate().twb - VV1->estimate()*dt) - g*dt*dt/2) - dP;
+    const Eigen::Vector3d _ep = VP1->estimate().Rwb.transpose()*((VP2->estimate().twb - VP1->estimate().twb - VV1->estimate()*dt) - g*dt*dt/2) - dP;
+
+    cout << "Pos With scale: \n" << ep << endl;
+    cout << "Pos Without scale: \n" << _ep << endl;
 
     _error << er, ev, ep;
 }

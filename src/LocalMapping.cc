@@ -1254,18 +1254,15 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         }
 
         dirG = dirG/dirG.norm();
-        cout << "Direction G: " << dirG << endl;
         Eigen::Vector3f gI(0.0f, 0.0f, -1.0f);
         Eigen::Vector3f v = gI.cross(dirG);
         const float nv = v.norm();
-        cout << "Direction G norm: " << v << endl;
         const float cosg = gI.dot(dirG);
         const float ang = acos(cosg);
         Eigen::Vector3f vzg = v*ang/nv;
         Rwg = Sophus::SO3f::exp(vzg).matrix();
         mRwg = Rwg.cast<double>();
         mTinit = mpCurrentKeyFrame->mTimeStamp-mFirstTs;
-        cout << "RwG: " << mRwg << endl;
     }
     else
     {
@@ -1274,7 +1271,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
     }
 
-    mScale=1.0;
+    mScale=1.20;
 
     mInitTime = mpTracker->mLastFrame.mTimeStamp-vpKF.front()->mTimeStamp;
 
@@ -1282,7 +1279,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
     Optimizer::InertialOptimization(mpAtlas->GetCurrentMap(), mRwg, mScale, mbg, mba, mbMonocular, infoInertial, false, false, priorG, priorA);
 
     std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-
+    cout << "SCALE::::::::::::::." <<  mScale << endl;
     if (mScale<1e-1)
     {
         cout << "scale too small" << endl;

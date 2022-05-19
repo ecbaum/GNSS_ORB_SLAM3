@@ -196,7 +196,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     GNSSFramework * mGNSSFramework = new GNSSFramework();
 
     // Give path to GNSS file to be read. 
-    string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
+   string pathSPP = "../data/MH_01_easy/mav0/SPPGPS.csv";
     string pathGNSSMessages = "../data/MH_01_easy/mav0/GNSS_Messages.csv";
     string pathSatPosStart = "../data/MH_01_easy/mav0/SatPosFolder/res_";
     string pathSatIdsList = "../data/MH_01_easy/mav0/SatIds.csv";
@@ -209,7 +209,8 @@ struct rawSatData{
     vector<vector<double>> rawData;
 };
 
-    
+        cout << "GNSS1" << endl;
+
     //Initialize the Tracking thread
     //(it will live in the main thread of execution, the one that called this constructor)
     cout << "Seq. Name: " << strSequence << endl;
@@ -238,6 +239,7 @@ struct rawSatData{
         satelliteInfo.sClockBiasPrior =0.0;
         mGNSSFramework->satInfo.push_back(satelliteInfo);
     }
+    cout << "GNSS2" << endl;
 
     int i = 0;
     for( int j =1; j< GNSSData.back()[0];j++){
@@ -281,6 +283,7 @@ struct rawSatData{
         epochData.satData = satDataVec;
         mGNSSFramework->epochData.push_back(epochData);
     }   
+    cout << "GNSS3" << endl;
 /*
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
         cout << endl;
@@ -414,7 +417,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
         }
         else if(mbResetActiveMap)
         {
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -489,7 +492,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         }
         else if(mbResetActiveMap)
         {
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -565,7 +568,7 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp, 
         else if(mbResetActiveMap)
         {
             cout << "SYSTEM-> Reseting active map in monocular case" << endl;
-            //mpTracker->ResetActiveMap();
+            mpTracker->ResetActiveMap();
             mbResetActiveMap = false;
         }
     }
@@ -1479,7 +1482,7 @@ void System::ChangeDataset()
 {
     if(mpAtlas->GetCurrentMap()->KeyFramesInMap() < 12)
     {
-        //mpTracker->ResetActiveMap();
+        mpTracker->ResetActiveMap();
     }
     else
     {
