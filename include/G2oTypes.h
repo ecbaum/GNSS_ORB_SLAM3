@@ -1040,7 +1040,7 @@ public:
         R_WE_WG_ = framework->R_WE_WG;
         p_b_g_   = framework->p_b_g;
         s = framework->s;
-        cout << "Scale G20H: " << s << endl;
+        //cout << "Scale G20H: " << s << endl;
         resize(6);
 
     }

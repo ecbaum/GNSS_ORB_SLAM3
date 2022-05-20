@@ -1268,7 +1268,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
         mba = mpCurrentKeyFrame->GetAccBias().cast<double>();
     }
 
-    mScale=1.0;
+    mScale=1.2;
 
     mInitTime = mpTracker->mLastFrame.mTimeStamp-vpKF.front()->mTimeStamp;
 

@@ -47,7 +47,7 @@ vector<string> readTextFile(const string &filename);
 void readPosRotTrans(const string &filename, Eigen::Vector3d &p_WE_WG, Eigen::Matrix3d &R_WE_WG, Vector7d &T_WG_WL);
 
 
-Verbose::eLevel Verbose::th = Verbose::VERBOSITY_QUIET; //GNSS setVerbose , setVerbosity , verboseTh
+Verbose::eLevel Verbose::th = Verbose::VERBOSITY_DEBUG; //GNSS setVerbose , setVerbosity , verboseTh
 
 System::System(const string &strVocFile, const string &strSettingsFile, const eSensor sensor,
                const bool bUseViewer, const int initFr, const string &strSequence):

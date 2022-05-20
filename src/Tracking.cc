@@ -2228,7 +2228,7 @@ void Tracking::Track()
        // cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime  << "\n"  ;
         // Associate data
         if( prevTime < epochTime && epochTime <  currentTime ){
-            cout << "Insert New GKF \n";
+            cout << "Insert gKF" << endl;
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;
@@ -2242,6 +2242,7 @@ void Tracking::Track()
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
 //    cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   " <<  GNSS_data[GNSS_counter][0] << "\n"  ;
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
+        cout << "Insert SPP" << endl;
         std::vector<double> a;
         a.insert(a.end(), { GNSS_data[GNSS_counter][1],GNSS_data[GNSS_counter][2],GNSS_data[GNSS_counter][3]});
         Eigen::Vector3d p_SPP_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
