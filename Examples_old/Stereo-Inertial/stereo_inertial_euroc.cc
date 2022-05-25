@@ -56,7 +56,6 @@ int main(int argc, char **argv)
         file_name = string(argv[argc-1]);
         cout << "file name: " << file_name << endl;
     }
-
     // Load all sequences:
     int seq;
     vector< vector<string> > vstrImageLeft;
@@ -76,7 +75,7 @@ int main(int argc, char **argv)
     vTimestampsImu.resize(num_seq);
     nImages.resize(num_seq);
     nImu.resize(num_seq);
-
+    cout << "lets goooo" << endl;
     int tot_images = 0;
     for (seq = 0; seq<num_seq; seq++)
     {
@@ -85,9 +84,9 @@ int main(int argc, char **argv)
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
 
-        string pathCam0 = pathSeq + "/mav0/cam0/data";
-        string pathCam1 = pathSeq + "/mav0/cam1/data";
-        string pathImu = pathSeq + "/mav0/imu0/data.csv";
+        string pathCam0 = pathSeq + "stereo_left";
+        string pathCam1 = pathSeq + "stereo_right";
+        string pathImu = pathSeq + "imu.csv";
 
         LoadImages(pathCam0, pathCam1, pathTimeStamps, vstrImageLeft[seq], vstrImageRight[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
@@ -345,6 +344,7 @@ void LoadImages(const string &strPathLeft, const string &strPathRight, const str
 
 void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
 {
+    cout << strImuPath << endl;
     ifstream fImu;
     fImu.open(strImuPath.c_str());
     vTimeStamps.reserve(5000);

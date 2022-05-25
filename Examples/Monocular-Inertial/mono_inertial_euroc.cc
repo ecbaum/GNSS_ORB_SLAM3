@@ -84,8 +84,9 @@ int main(int argc, char *argv[])
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
 
-        string pathCam0 = pathSeq + "/mav0/cam0/data";
-        string pathImu = pathSeq + "/mav0/imu0/data.csv";
+        string pathCam0 = pathSeq + "/cam0";
+        string pathImu = pathSeq + "/imu.csv";
+
         
         LoadImages(pathCam0, pathTimeStamps, vstrImageFilenames[seq], vTimestampsCam[seq]);
         cout << "LOADED!" << endl;
@@ -105,7 +106,7 @@ int main(int argc, char *argv[])
         }
 
         // Find first imu to be considered, supposing imu measurements start first
-
+        
         while(vTimestampsImu[seq][first_imu[seq]]<=vTimestampsCam[seq][0])
             first_imu[seq]++;
         first_imu[seq]--; // first imu measurement to be considered
@@ -289,6 +290,7 @@ void LoadGNSS(const string &strGNSSPath){
 
 void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::Point3f> &vAcc, vector<cv::Point3f> &vGyro)
 {
+    cout << strImuPath << endl;
     ifstream fImu;
     fImu.open(strImuPath.c_str());
     vTimeStamps.reserve(5000);
