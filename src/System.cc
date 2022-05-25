@@ -198,7 +198,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     GNSSFramework * mGNSSFramework = new GNSSFramework();
     // Give path to GNSS file to be read. 
     string pathSPP = "../../Downloads/UrbanLoco/CA-20190828184706/bestpos_CA2.csv";
-    string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message_m8t_clk_corr.csv";
+    string pathGNSSMessages = "../../Downloads/UrbanLoco/CA-20190828184706/gnss_augmented.txt";
     //string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
     vector<vector<double>> GNSSData;
     /*
@@ -233,7 +233,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         epochData.epochIdx = j;
         //epochData.rClockBiasPrior = -161.38852905644*double(j) -106860.962614518; 
         //epochData.rClockBiasPrior = -5.38334186700722*1e-7*double(j) - 0.000356449803065153;
-        epochData.rClockBiasPrior = 0.0;
+        epochData.rClockBiasPrior = GNSSData[j][9];
 
         vector<SatelliteData> satDataVec;
 
@@ -242,17 +242,15 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
 
             satelliteData.satId =  GNSSData[i][2];
             satelliteData.Pseudorange = GNSSData[i][3];
-            satelliteData.RawPseudorange = GNSSData[i][4];
-            satelliteData.Snr = GNSSData[i][5];
-            satelliteData.ErrTropo = GNSSData[i][6];
-            satelliteData.ErrIono = GNSSData[i][7];
-            satelliteData.SatClkErr = GNSSData[i][8];
+            satelliteData.Snr = GNSSData[i][4];
+            satelliteData.cov = GNSSData[i][10];
+
 
             std::vector<double> a;
-            a.insert(a.end(), { GNSSData[i][9], GNSSData[i][10], GNSSData[i][11]});
+            a.insert(a.end(), { GNSSData[i][5], GNSSData[i][6], GNSSData[i][7]});
             Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
             satelliteData.p_WE = p_WE_;
-            satelliteData.satSystemId = GNSSData[i][12];
+            satelliteData.satSystemId = GNSSData[i][8];
 
             satDataVec.push_back(satelliteData);
             epochData.epochTime = GNSSData[i][1];

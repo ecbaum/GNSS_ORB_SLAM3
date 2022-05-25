@@ -2590,10 +2590,12 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //  if(false){
 
     if(mGNSSFramework->finishedInitOp){ // Vertices for GNSS
+    /*
         cout << "  T_WG_WL    :" << endl << mGNSSFramework->T_WG_WL<< endl;
         cout << "  s          :" << endl << mGNSSFramework->s<< endl;;
         cout << "  p_WE_WG    :" << endl << mGNSSFramework->p_WE_WG<< endl;;
         cout << "  R_WE_WG    :" << endl << mGNSSFramework->R_WE_WG<< endl;;
+        */
         //Vertex for ENU to local
         g2o::VertexSE3Expmap * VT = new g2o::VertexSE3Expmap();
         VT->setId(mGNSSFramework->mnId);
@@ -2701,9 +2703,9 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                     //eTest4
 
         // psuedorange edges
-    if(false){
-        //if(pKFi->fGF && mGNSSFramework->finishedInitOp){
-            //cout << "Checkpoint 1:  " << endl; 
+    //if(false){
+    if(pKFi->fGF && mGNSSFramework->finishedInitOp){
+            cout << "Checkpoint 1:  " << endl; 
             int ep_idx = pKFi->epochIdx;
 
             for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx ++){
@@ -3108,11 +3110,12 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     //Save optimized variable
     mGNSSFramework->T_WG_WL = static_cast<g2o::VertexSE3Expmap*>(optimizer.vertex(mGNSSFramework->mnId))->estimate();
     mGNSSFramework->s = static_cast<VertexScale*>(optimizer.vertex(mGNSSFramework->mnId+1))->estimate();
- 
+ /*
     cout << "Transform"<<endl;
     cout << mGNSSFramework->T_WG_WL; 
     cout << endl;
     cout<< "Scale :" << mGNSSFramework->s<< endl;
+    */
 
 
 }

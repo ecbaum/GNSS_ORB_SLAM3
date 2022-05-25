@@ -2210,9 +2210,9 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
-/*
+
     // eTEST1
-if(false){ // If data is loaded
+if(true){ // If data is loaded
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
 
@@ -2224,7 +2224,7 @@ if(false){ // If data is loaded
         double currentTime = mCurrentFrame.mTimeStamp;
         double prevTime = mCurrentFrame.mpPrevFrame->mTimeStamp;
         double epochTime = mGNSSFramework->epochData[epoch_idx_counter].epochTime;
-       // cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime  << "\n"  ;
+        //cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime  << "\n"  ;
         // Associate data
         if( prevTime < epochTime && epochTime <  currentTime ){
             cout << "Insert gKF" << endl;
@@ -2236,13 +2236,12 @@ if(false){ // If data is loaded
         }
 
    }
-   */
-/*
+   
 
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
-//    cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   " <<  GNSS_data[GNSS_counter][0] << "\n"  ;
+    //cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   " <<  GNSS_data[GNSS_counter][0] << "\n"  ;
     if( mCurrentFrame.mTimeStamp> GNSS_data[GNSS_counter][0] && mCurrentFrame.mpPrevFrame->mTimeStamp< GNSS_data[GNSS_counter][0]){
-        cout << "Insert SPP" << endl;
+       // cout << "Insert SPP" << endl;
         std::vector<double> a;
         a.insert(a.end(), { GNSS_data[GNSS_counter][1],GNSS_data[GNSS_counter][2],GNSS_data[GNSS_counter][3]});
         Eigen::Vector3d p_SPP_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
@@ -2255,7 +2254,7 @@ if(false){ // If data is loaded
         mGNSSFramework->p_SPP.push_back(p_SPP_);
         GNSS_counter++;
         }
-    */
+    
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())

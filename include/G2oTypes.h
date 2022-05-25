@@ -852,12 +852,9 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates);
 struct SatelliteData{
     string satSystemId;             // Identifier for different satellite system, GPS/Galileo/GLONASS/BeiDou 
     int satId;                      // Unique satellite identifier
-    double Pseudorange;             // Psuedorange measurement
-    double RawPseudorange;          // Raw Psuedorange measurement
-    double ErrTropo;                // Troposheric Errors
-    double ErrIono;                 // Ionospheric Errors
-    double SatClkErr;               // SatClockError
+    double Pseudorange;             // Psuedorange measurement           
     double Snr;                     // Receiver/satellite signal to noise ratio? Behöver kollas
+    double cov;
     Eigen::Vector3d p_WE;           // Satellite position in {WE} frame [KM]
 };
 
@@ -962,10 +959,10 @@ public:
 
     _error << p_WG_gl - VS->estimate()*TF->estimate().map(p_WL_gl);
         
-        cout << "   -init error:   ";
-        cout << _error.norm();
+       // cout << "   -init error:   ";
+        //cout << _error.norm();
        // for(int i=0;i<3;i++){ cout <<  (_error[i]) << "    "; }
-        cout << endl;
+        //cout << endl;
     
 
     }
@@ -1121,7 +1118,7 @@ public:
         //cout << "P_WL_Gme:\n  " << P_WL_Gme << endl;
        // cout << "Norm: "<<  norm << endl;
         //cout << "Rec_Bias: " << b_r->estimate() << endl;
-        //cout<< "Error:   " << _error << endl; 
+        cout<< "Error:   " << _error << endl; 
     }
 };
 
