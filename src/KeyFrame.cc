@@ -700,8 +700,8 @@ void KeyFrame::SetBadFlag()
     }
 
     //GNSS
-    mpMap->EraseKeyFrame(this);
-    mpKeyFrameDB->erase(this);
+    //mpMap->EraseKeyFrame(this);
+    //mpKeyFrameDB->erase(this);
     
 }
 

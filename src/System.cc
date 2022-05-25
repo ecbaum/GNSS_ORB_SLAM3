@@ -180,7 +180,6 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
         loadedAtlas = true;
 
         mpAtlas->CreateNewMap();
-        //mpTracker->mGNSSFramework = mGNSSFramework; 
         //clock_t timeElapsed = clock() - start;
         //unsigned msElapsed = timeElapsed / (CLOCKS_PER_SEC / 1000);
         //cout << "Binary file read in " << msElapsed << " ms" << endl;
@@ -198,9 +197,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     
     GNSSFramework * mGNSSFramework = new GNSSFramework();
     // Give path to GNSS file to be read. 
-    string pathSPP = "../data/MH_01_easy/mav0/gt.csv";
+    string pathSPP = "../../Downloads/UrbanLoco/CA-20190828184706/bestpos_CA2.csv";
     string pathGNSSMessages = "../data/MH_01_easy/mav0/2021-05-17_HK_GNSS_Message_m8t_clk_corr.csv";
-    string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
+    //string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
     vector<vector<double>> GNSSData;
     /*
     Eigen::Vector3d p_WE_WG_;    
@@ -212,7 +211,7 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mGNSSFramework->R_WE_WG = R_WE_WG_;
     mGNSSFramework->p_WE_WG =p_WE_WG_ ;
     //mGNSSFramework->T_WG_WL =T_WG_WL;
-
+    
 
 */
 

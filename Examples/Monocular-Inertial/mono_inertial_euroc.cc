@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
         string pathSeq(argv[(2*seq) + 3]);
         string pathTimeStamps(argv[(2*seq) + 4]);
 
-        string pathCam0 = pathSeq + "/cam1/";
+        string pathCam0 = pathSeq + "/cam0";
         string pathImu = pathSeq + "/imu.csv";
         
         LoadImages(pathCam0, pathTimeStamps, vstrImageFilenames[seq], vTimestampsCam[seq]);
@@ -317,8 +317,8 @@ void LoadIMU(const string &strImuPath, vector<double> &vTimeStamps, vector<cv::P
             data[6] = stod(item);
 
             vTimeStamps.push_back(data[0]/1e9);
-            vAcc.push_back(cv::Point3f(data[5],data[6],data[4]));
-            vGyro.push_back(cv::Point3f(data[2],data[3],data[1]));
+            vAcc.push_back(cv::Point3f(data[4],data[5],data[6]));
+            vGyro.push_back(cv::Point3f(data[1],data[2],data[3]));
         }
     }
 }

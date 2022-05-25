@@ -2210,10 +2210,9 @@ void Tracking::Track()
         double timeLMTrack = std::chrono::duration_cast<std::chrono::duration<double,std::milli> >(time_EndLMTrack - time_StartLMTrack).count();
         vdLMTrack_ms.push_back(timeLMTrack);
 #endif
-
+/*
     // eTEST1
-    //if(true){ // If data is loaded
-    
+if(false){ // If data is loaded
         // Synchronice epoch index with current frame time
         while(mCurrentFrame.mpPrevFrame->mTimeStamp > mGNSSFramework->epochData[epoch_idx_counter].epochTime){
 
@@ -2236,8 +2235,9 @@ void Tracking::Track()
             epoch_idx_counter++;
         }
 
-  //  }
-
+   }
+   */
+/*
 
     while( mCurrentFrame.mpPrevFrame->mTimeStamp > GNSS_data[GNSS_counter][0] ){GNSS_counter++;}
 //    cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   " <<  GNSS_data[GNSS_counter][0] << "\n"  ;
@@ -2255,7 +2255,7 @@ void Tracking::Track()
         mGNSSFramework->p_SPP.push_back(p_SPP_);
         GNSS_counter++;
         }
-
+    */
         // Update drawer
         mpFrameDrawer->Update(this);
         if(mCurrentFrame.isSet())
