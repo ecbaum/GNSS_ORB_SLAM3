@@ -1541,7 +1541,7 @@ void Optimizer::OptimizeEssentialGraph(Map* pMap, KeyFrame* pLoopKF, KeyFrame* p
         if(pKF->isBad())
             continue;
         g2o::VertexSim3Expmap* VSim3 = new g2o::VertexSim3Expmap();
-
+                        
         const int nIDi = pKF->mnId;
 
         LoopClosing::KeyFrameAndPose::const_iterator it = CorrectedSim3.find(pKF);
@@ -2725,7 +2725,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
                 EdgePsuedorange * ePR = new EdgePsuedorange(mGNSSFramework);
                 
-                ePR->setMeasurements(mGNSSFramework, pKFi, ep_idx, sat_idx);
+                ePR->setMeasurements(mGNSSFramework, pKFi, pKFi->mPrevKF, ep_idx, sat_idx);
                 
                 int satId = mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId;
                 // Collect vertices

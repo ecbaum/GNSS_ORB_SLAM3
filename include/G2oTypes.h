@@ -1029,7 +1029,7 @@ public:
         p_WE_WG_ = framework->p_WE_WG;
         R_WE_WG_ = framework->R_WE_WG;
         p_b_g_   = framework->p_b_g;
-        resize(6);
+        resize(4);
 
     }
 
@@ -1049,21 +1049,23 @@ public:
     IMU::Preintegrated * pIntGNSS;  // Preintegration factor between moment of epoch m(e) expure k and moment of expure, k
     double pr_;                     // Psuedorange measurement
     double b_s;                     // Satellite bias
+    double t_current;
+    double t_last;
+    double t_epoch;
     Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
 
-    void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
+    void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, KeyFrame * prevKF, int epochIdx, int satIdx){
         /* Todo:
                 set info based on covariance in psuedorange, position estimates and biases
         */
 
-        // Epoch data
-        dT = framework->epochData[epochIdx].dT;
-        pIntGNSS = GKF->mpImuPreintegratedToGNSS;
+        t_current = GKF->mTimeStamp;
+        t_last = prevKF->mTimeStamp;
+        t_epoch = framework->epochData[epochIdx].>epochTime;
 
-        // Satellite data
         pr_ = framework->epochData[epochIdx].satData[satIdx].Pseudorange;
-        // b_s = framework->epochData[epochIdx].satData[satIdx].bias;
-        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE * 1000;
+
+        P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE;
 
         Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
         setInformation(Info);
@@ -1073,27 +1075,24 @@ public:
 
         const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);                                   // Pose from keyframe
         const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);                            // Velocity from keyframe
-        const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);                            // Gyrobias from keyframe
-        const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);                              // Accbias from keyframe
 
-        const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[4]);                // Transformation of between ground (ENU) and local (SLAM)
+        const VertexPose* VP2 = static_cast<const VertexPose*>(_vertices[2]);                                   // Pose from previous keyframe
 
-        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[5]);                         // Clock bias for reciever        
+        const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[3]);                // Transformation of between ground (ENU) and local (SLAM)
 
-        //const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
-        //const Eigen::Matrix3d dR = pIntGNSS->GetDeltaRotation(b1).cast<double>();                               // Pre-integration from keyframe time to moment of epoch
-        //const Eigen::Vector3d dV = pIntGNSS->GetDeltaVelocity(b1).cast<double>();
-        //const Eigen::Vector3d dP = pIntGNSS->GetDeltaPosition(b1).cast<double>();
+        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[4]);                         // Clock bias for reciever        
 
         const Eigen::Vector3d p_WE_WG = static_cast<const Eigen::Vector3d>(p_WE_WG_);                           // Retrieve transformations
         const Eigen::Matrix3d R_WE_WG = static_cast<const Eigen::Matrix3d>(R_WE_WG_);
         const Eigen::Vector3d p_b_g   = static_cast<const Eigen::Vector3d>(p_b_g_);
+        
 
-        gI << 0, 0, -IMU::GRAVITY_VALUE;              
-        Eigen::Vector3d g = VP1->estimate().Rwb*gI;                                                             // Rotate gravity vector
-                                                                                   
-        //const Eigen::Vector3d T_e_k = VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;   // Integrated IMU position from moment of exposure to moment of epoch
-        const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb;// - T_e_k; 
+        const Eigen::Vector3d twb_current = VP1->estimate().twb;
+        const Eigen::Vector3d twb_last = VP2->estimate().twb;       
+
+        Eigen::Vector3d T_e_k = ( twb_current - twb_last )*( (t_current - t_epoch)  /  (t_current - t_last) );
+
+        const Eigen::Vector3d P_WL_Gme = twb_current - T_e_k; 
 
         const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
         const Eigen::Vector3d P_WG_WL = VT->estimate().translation();

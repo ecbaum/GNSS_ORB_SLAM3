@@ -1742,9 +1742,27 @@ void Tracking::PreintegrateIMU()
     mCurrentFrame.mpLastKeyFrame = mpLastKeyFrame;
 
     mCurrentFrame.setIntegrated();
-    
-    
 
+    if(mCurrentFrame.mpLastKeyFrame->mTimeStamp){
+        const Eigen::Vector3f twb1 = mpLastKeyFrame->GetImuPosition();
+        const Eigen::Matrix3f Rwb1 = mpLastKeyFrame->GetImuRotation();
+        const Eigen::Vector3f Vwb1 = mpLastKeyFrame->GetVelocity();
+
+        const Eigen::Vector3f Gz(0, 0, -IMU::GRAVITY_VALUE);
+        const float t12 = mpImuPreintegratedFromLastKF->dT;
+
+        Eigen::Vector3f diff = Vwb1*t12 + 0.5f*t12*t12*Gz+ Rwb1*mpImuPreintegratedFromLastKF->GetDeltaPosition(mpLastKeyFrame->GetImuBias());
+
+        //double deltaP = mCurrentFrame.mpImuPreintegrated->GetDeltaPosition(mCurrentFrame.mImuBias).norm();
+        double deltaT_imu = mCurrentFrame.mTimeStamp - mCurrentFrame.mpLastKeyFrame->mTimeStamp;
+
+
+        cout << "   IMU: DeltaP/deltaT = " << double(diff.norm())/deltaT_imu << endl;
+
+    }
+
+
+    
     //Verbose::PrintMess("Preintegration is finished!! ", Verbose::VERBOSITY_DEBUG);
 }
 
@@ -2245,7 +2263,32 @@ void Tracking::Track()
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][1]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][2]);
             SPP_geodetic.push_back(GNSS_data[GNSS_counter][3]);
+
+
+
+            if(GNSS_counter>0){
+                double t_spp_1 = GNSS_data[GNSS_counter-1][0];
+                double t_spp_2 = GNSS_data[GNSS_counter][0];
+
+                
+                std::vector<double> a;
+                a.insert(a.end(), { GNSS_data[GNSS_counter-1][1], GNSS_data[GNSS_counter-1][1], GNSS_data[GNSS_counter-1][1] } );
+                Eigen::Vector3d spp1 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+
+                std::vector<double> b;
+                b.insert(b.end(), { GNSS_data[GNSS_counter][1], GNSS_data[GNSS_counter][2], GNSS_data[GNSS_counter][3] });
+                Eigen::Vector3d spp2 = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(b.data(), b.size());
+
+
+                double spp_vel = (GeodeticToECEF(spp2) - GeodeticToECEF(spp1)).norm()/(t_spp_2 - t_spp_1);
+                cout << "   SPP: DeltaP/deltaT = " << spp_vel << endl;
+            }
+
+
             GNSS_counter++;
+
+
+
         }
 
         // Update drawer
