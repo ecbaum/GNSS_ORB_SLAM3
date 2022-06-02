@@ -1194,7 +1194,7 @@ void LocalMapping::InitializeIMU(float priorG, float priorA, bool bFIBA)
 
 
     if(mpAtlas->KeyFramesInMap()<nMinKF){
-        cout << "Too few KFs in map:  " <<mpAtlas->KeyFramesInMap() <<  endl;
+        //cout << "Too few KFs in map:  " <<mpAtlas->KeyFramesInMap() <<  endl;
         return;
     }
     // Retrieve all keyframe in temporal order

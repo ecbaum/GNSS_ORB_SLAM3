@@ -546,7 +546,7 @@ public:
 };
 
 
-// Edge inertial whre gravity is included as optimizable variable and it is not supposed to be pointing in -z axis, as well as scale
+// Edge inertial where gravity is included as optimizable variable and it is not supposed to be pointing in -z axis, as well as scale
 class EdgeInertialGS : public g2o::BaseMultiEdge<9,Vector9d>
 {
 public:
@@ -877,7 +877,7 @@ public:
     GNSSFramework(){
         initOptCounter = 0;
         initOptThreshold = 1;
-        KeyFrameThreshold = 7;
+        KeyFrameThreshold = 1;
         bInitalized = false;
         finishedInitOp = false;
     }
@@ -902,6 +902,8 @@ public:
     bool finishedInitOp;
     int mnId = 10000000;  
     double s; 
+    vector<vector<double>> gtAugmented;
+
         
     vector<Eigen::Vector3d> p_SPP;
     vector<Eigen::Vector3d> p_Local;
@@ -1029,6 +1031,7 @@ class EdgePsuedorange : public g2o::BaseMultiEdge<1,double>
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    EdgePsuedorange(){}
 
     EdgePsuedorange(GNSSFramework * framework){
         // Global data
@@ -1038,8 +1041,8 @@ public:
         p_b_g_   = framework->p_b_g;
         s = framework->s;
         //cout << "Scale G20H: " << s << endl;
-        resize(6);
-
+        resize(3);
+        toPrint = false;
     }
 
     virtual bool read(std::istream& is){return false;}
@@ -1060,6 +1063,11 @@ public:
     double b_s;                     // Satellite bias
     Eigen::Vector3d P_WE_Sie;       // Position of satellite i in ECEF
     double s;
+    bool toPrint;
+    double epT;
+    vector<vector<double>> gtAugmented;
+
+    Eigen::Vector3d ECEFToENU(Eigen::Vector3d &p_WE_gl);
 
     void setMeasurements(GNSSFramework * framework, KeyFrame * GKF, int epochIdx, int satIdx){
         /* Todo:
@@ -1067,58 +1075,104 @@ public:
         */
 
         // Epoch data
+        
         dT = framework->epochData[epochIdx].dT;
         pIntGNSS = GKF->mpImuPreintegratedToGNSS;
-
+        gtAugmented = framework->gtAugmented;
         // Satellite data
         pr_ = framework->epochData[epochIdx].satData[satIdx].Pseudorange;
         // b_s = framework->epochData[epochIdx].satData[satIdx].bias;
         P_WE_Sie = framework->epochData[epochIdx].satData[satIdx].p_WE;
-
-        Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
-        setInformation(Info);
+        epT = framework->epochData[epochIdx].epochTime;
+      //  Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1);
+        //setInformation(Info);
 
     };
     void computeError(){
 
+       /*/ Eigen::Matrix3d R_WG_WL;
+R_WG_WL << 0.172419864623377, 0.796352239366649, -0.579736579093453,
+-0.970653067331051 ,0.037194654260542, -0.23759036296799,
+-0.167642515979923 ,0.60368838695983, 0.779394841069505;
+
+
+Eigen::Vector3d P_WG_WL {0.918325513105219, -14.7973076054876, 0.626832297905288};  
+*/
+
         const VertexPose* VP1 = static_cast<const VertexPose*>(_vertices[0]);                                   // Pose from keyframe
-        const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);                            // Velocity from keyframe
-        const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);                            // Gyrobias from keyframe
-        const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);                              // Accbias from keyframe
+      //  const VertexVelocity* VV1= static_cast<const VertexVelocity*>(_vertices[1]);                            // Velocity from keyframe
+       // const VertexGyroBias* VG1= static_cast<const VertexGyroBias*>(_vertices[2]);                            // Gyrobias from keyframe
+        //const VertexAccBias* VA1= static_cast<const VertexAccBias*>(_vertices[3]);                              // Accbias from keyframe
 
-        const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[4]);                // Transformation of between ground (ENU) and local (SLAM)
+        const g2o::VertexSE3Expmap* VT = static_cast<const g2o::VertexSE3Expmap*>(_vertices[1]);                // Transformation of between ground (ENU) and local (SLAM)
 
-        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[5]);                         // Clock bias for reciever        
+        const VertexClockBias* b_r = static_cast<const VertexClockBias*>(_vertices[2]);                         // Clock bias for reciever        
 
         //const IMU::Bias b1(VA1->estimate()[0],VA1->estimate()[1],VA1->estimate()[2],VG1->estimate()[0],VG1->estimate()[1],VG1->estimate()[2]);
         //const Eigen::Matrix3d dR = pIntGNSS->GetDeltaRotation(b1).cast<double>();                               // Pre-integration from keyframe time to moment of epoch
         //const Eigen::Vector3d dV = pIntGNSS->GetDeltaVelocity(b1).cast<double>();
         //const Eigen::Vector3d dP = pIntGNSS->GetDeltaPosition(b1).cast<double>();
 
-        const Eigen::Vector3d p_WE_WG = static_cast<const Eigen::Vector3d>(p_WE_WG_);                           // Retrieve transformations
-        const Eigen::Matrix3d R_WE_WG = static_cast<const Eigen::Matrix3d>(R_WE_WG_);
-        const Eigen::Vector3d p_b_g   = static_cast<const Eigen::Vector3d>(p_b_g_);
+      const Eigen::Vector3d p_WE_WG = static_cast<const Eigen::Vector3d>(p_WE_WG_);                           // Retrieve transformations
+      const Eigen::Matrix3d R_WE_WG = static_cast<const Eigen::Matrix3d>(R_WE_WG_);
+      const Eigen::Vector3d p_b_g   = static_cast<const Eigen::Vector3d>(p_b_g_);
 
         gI << 0, 0, -IMU::GRAVITY_VALUE;              
         Eigen::Vector3d g = VP1->estimate().Rwb*gI;                                                             // Rotate gravity vector
-                                                                                   
+        const Eigen::Matrix3d R_WG_WL =VT->estimate().rotation().toRotationMatrix(); 
+        const Eigen::Vector3d P_WG_WL =VT->estimate().translation() ; 
+                                      
         //const Eigen::Vector3d T_e_k = VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;   // Integrated IMU position from moment of exposure to moment of epoch
         const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb;// - T_e_k; 
-
-        const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
-        const Eigen::Vector3d P_WG_WL = VT->estimate().translation() ; 
-
         const double pr =  static_cast<const double>(pr_);  
-        const double pr_error = ( P_WE_Sie - ( R_WE_WG*s*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG)).norm() + c* (b_r->estimate()) - pr;
+        
+        const double pr_error = ( P_WE_Sie - ( R_WE_WG*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG)).norm() + c* (b_r->estimate()) - pr;
 
         _error = Eigen::Matrix<double,1,1 > (pr_error);
-      //  cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;
-       // cout << "R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG. : " << endl << R_WE_WG*R_WG_WL*P_WL_Gme + R_WE_WG*P_WG_WL + p_WE_WG << endl;
-       // cout << "PR:  " << pr << endl;
-        //cout << "P_WL_Gme:\n  " << P_WL_Gme << endl;
-       // cout << "Norm: "<<  norm << endl;
-        //cout << "Rec_Bias: " << b_r->estimate() << endl;
-        cout<< "Error:   " << _error << endl; 
+
+       if(toPrint){
+          //  cout << "-------------------epT: " << endl << epT << endl; 
+            cout << "ERROR: \n" << _error << endl;
+            // cout << "R_WG_WL: \n" << R_WG_WL << endl;
+            // cout << "P_WG_WL: \n" <<P_WG_WL<< endl;
+             // cout << "R_WE_WG: \n" << R_WE_WG << endl;
+            // cout << "p_WE_WG: \n" << p_WE_WG << endl;
+           // cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;
+           // cout << "PR:  " << endl << pr << endl;
+           // cout << "P_WL_Gme:\n" << P_WL_Gme << endl;
+           // cout << "Rec_Bias: " << endl << b_r->estimate() << endl;
+            double pr_error2;
+        
+            for(int i = 0; i < gtAugmented.size();i++){
+                if(gtAugmented[i][1] == epT){
+                    Eigen::Vector3d gt_ {gtAugmented[i][10],gtAugmented[i][11],gtAugmented[i][12]};
+                    Eigen::Vector3d gt;
+                    gt =  R_WE_WG.transpose() * ( gt_ - p_WE_WG) ; 
+
+                   // cout << "Error to GT: \n  "<< ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm() << endl;
+                pr_error2 =  ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm();
+                
+                break; 
+
+                  
+    
+
+                }
+            }
+                           cout << "GT ERROR: \n " << pr_error2 << endl;
+
+        }    
+          //  _error = Eigen::Matrix<double,1,1 > (pr_error2);
+
+
+        //}
+
+
+       // cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;
+        //  cout << "PR:  " << pr << endl;
+     //   cout << "P_WL_Gme:\n  " << P_WL_Gme << endl;
+     //   cout << "Rec_Bias: " << b_r->estimate() << endl;
+    //cout<< "Error:   " << _error << endl; 
     }
 };
 

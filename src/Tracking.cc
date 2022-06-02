@@ -2227,7 +2227,7 @@ if(true){ // If data is loaded
         //cout << mCurrentFrame.mpPrevFrame->mTimeStamp << "   "  << mGNSSFramework->epochData[epoch_idx_counter].epochTime  << "\n"  ;
         // Associate data
         if( prevTime < epochTime && epochTime <  currentTime ){
-            cout << "Insert gKF" << endl;
+            //cout << "Insert gKF" << endl;
             mGNSSFramework->epochData[epoch_idx_counter].gKFTime = currentTime;
             mGNSSFramework->epochData[epoch_idx_counter].dT = currentTime - epochTime;
             mCurrentFrame.epochIdx = epoch_idx_counter;

@@ -199,8 +199,10 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     // Give path to GNSS file to be read. 
     string pathSPP = "../../Downloads/UrbanLoco/CA-20190828184706/bestpos_CA2.csv";
     string pathGNSSMessages = "../../Downloads/UrbanLoco/CA-20190828184706/gnss_augmented.txt";
+    string pathGt = "../../Downloads/UrbanLoco/gnss_augmented_with_gt.csv";
     //string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
     vector<vector<double>> GNSSData;
+
     /*
     Eigen::Vector3d p_WE_WG_;    
     Eigen::Matrix3d R_WE_WG_;
@@ -224,20 +226,19 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     mpTracker->GNSS_data = readGNSS(pathSPP); //Loading GNSSdata to tracker. 
 
     GNSSData = readGNSS(pathGNSSMessages);
+    mGNSSFramework->gtAugmented = readGNSS(pathGt);
 
     int i = 0;
-    for( int j =1; j< GNSSData.back()[0];j++){
+    for( int j =0; j< GNSSData.back()[0];j++){
         EpochData epochData;
 
-        
         epochData.epochIdx = j;
         //epochData.rClockBiasPrior = -161.38852905644*double(j) -106860.962614518; 
         //epochData.rClockBiasPrior = -5.38334186700722*1e-7*double(j) - 0.000356449803065153;
-        epochData.rClockBiasPrior = GNSSData[j][9];
 
         vector<SatelliteData> satDataVec;
 
-        while(GNSSData[i][0] == j){
+        while(GNSSData[i][0]-1 == j && i < GNSSData.size()-1 ){
             SatelliteData satelliteData;
 
             satelliteData.satId =  GNSSData[i][2];
@@ -245,36 +246,42 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
             satelliteData.Snr = GNSSData[i][4];
             satelliteData.cov = GNSSData[i][10];
 
-
             std::vector<double> a;
             a.insert(a.end(), { GNSSData[i][5], GNSSData[i][6], GNSSData[i][7]});
-            Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
-            satelliteData.p_WE = p_WE_;
-            satelliteData.satSystemId = GNSSData[i][8];
 
+            Eigen::Vector3d p_WE_ = Eigen::Map<Eigen::Vector3d, Eigen::Unaligned>(a.data(), a.size());
+
+            satelliteData.p_WE = p_WE_;
+            
+            satelliteData.satSystemId = GNSSData[i][8];
             satDataVec.push_back(satelliteData);
             epochData.epochTime = GNSSData[i][1];
+            epochData.rClockBiasPrior = GNSSData[i][9];
+
             i++;
         }
+        
         epochData.satData = satDataVec;
         mGNSSFramework->epochData.push_back(epochData);
     }   
-
 /*
+cout <<  mGNSSFramework->epochData.size() << endl;
     for(int i = 0; i < mGNSSFramework->epochData.size(); i++){
+        cout << i << endl;
         cout << endl;
         cout << endl;
-        cout<< " epoch idx: "<< mGNSSFramework->epochData[i].epochIdx<< " Time: " << mGNSSFramework->epochData[i].epochTime << " "<< endl;
+        cout<< " epoch idx: "<< mGNSSFramework->epochData[i].epochIdx<< " Time: " << mGNSSFramework->epochData[i].epochTime << " "<<"RCBias "<<mGNSSFramework->epochData[i].rClockBiasPrior << endl;
         for(int j = 0; j< mGNSSFramework->epochData[i].satData.size(); j++){
+            cout << j<< endl;
+            
             cout << "satid: " << mGNSSFramework->epochData[i].satData[j].satId << endl;
             cout << "pr: " << mGNSSFramework->epochData[i].satData[j].Pseudorange << endl;
             cout << "pos: " << mGNSSFramework->epochData[i].satData[j].p_WE << endl;
+            
 
         }
+    }*/
 
-
-    }
-    */
     //Initialize the Local Mapping thread and launch
     mpLocalMapper = new LocalMapping(this, mpAtlas, mSensor==MONOCULAR || mSensor==IMU_MONOCULAR,
                                      mSensor==IMU_MONOCULAR || mSensor==IMU_STEREO || mSensor==IMU_RGBD, strSequence);

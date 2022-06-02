@@ -549,6 +549,7 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
                     egr->setVertex(0,VG1);
                     egr->setVertex(1,VG2);
                     Eigen::Matrix3d InfoG = pKFi->mpImuPreintegrated->C.block<3,3>(9,9).cast<double>().inverse();
+                    //cout << "InfoG:\n" << InfoG << endl;
                     egr->setInformation(InfoG);
                     egr->computeError();
                     optimizer.addEdge(egr);
@@ -813,7 +814,9 @@ void Optimizer::FullInertialBA(Map *pMap, int its, const bool bFixLocal, const l
 
 int Optimizer::PoseOptimization(Frame *pFrame)
 {
+    //cout << "PO:::::::::" << endl;
     g2o::SparseOptimizer optimizer;
+    
     g2o::BlockSolver_6_3::LinearSolverType * linearSolver;
 
     linearSolver = new g2o::LinearSolverDense<g2o::BlockSolver_6_3::PoseMatrixType>();
@@ -1115,6 +1118,7 @@ int Optimizer::PoseOptimization(Frame *pFrame)
 
 void Optimizer::LocalBundleAdjustment(KeyFrame *pKF, bool* pbStopFlag, Map* pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges)
 {
+    cout << "LBA:::::::::" << endl;
     // Local KeyFrames: First Breath Search from Current Keyframe
     list<KeyFrame*> lLocalKeyFrames;
 
@@ -2382,6 +2386,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, GNSSFramework * mGNSSFramework, bool bLarge, bool bRecInit)
 {
+
     Map* pCurrentMap = pKF->GetMap();
 
     int maxOpt=10;
@@ -2390,7 +2395,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     {
         maxOpt=25;
         opt_it=4;
-    }
+    } 
     const int Nd = std::min((int)pCurrentMap->KeyFramesInMap()-2,maxOpt);
     const unsigned long maxKFid = pKF->mnId;
 
@@ -2506,6 +2511,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     // Setup optimizer
     g2o::SparseOptimizer optimizer;
     g2o::BlockSolverX::LinearSolverType * linearSolver;
+        optimizer.setVerbose(false);
+
     linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
 
     g2o::BlockSolverX * solver_ptr = new g2o::BlockSolverX(linearSolver);
@@ -2551,7 +2558,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             optimizer.addVertex(VA);
         }
     }
-
     // Set Local visual KeyFrame vertices
     for(list<KeyFrame*>::iterator it=lpOptVisKFs.begin(), itEnd = lpOptVisKFs.end(); it!=itEnd; it++)
     {
@@ -2561,7 +2567,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         VP->setFixed(false);
         optimizer.addVertex(VP);
     }
-
     // Set Fixed KeyFrame vertices
     for(list<KeyFrame*>::iterator lit=lFixedKeyFrames.begin(), lend=lFixedKeyFrames.end(); lit!=lend; lit++)
     {
@@ -2590,12 +2595,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     //  if(false){
 
     if(mGNSSFramework->finishedInitOp){ // Vertices for GNSS
-    /*
-        cout << "  T_WG_WL    :" << endl << mGNSSFramework->T_WG_WL<< endl;
-        cout << "  s          :" << endl << mGNSSFramework->s<< endl;;
-        cout << "  p_WE_WG    :" << endl << mGNSSFramework->p_WE_WG<< endl;;
-        cout << "  R_WE_WG    :" << endl << mGNSSFramework->R_WE_WG<< endl;;
-        */
+    
         //Vertex for ENU to local
         g2o::VertexSE3Expmap * VT = new g2o::VertexSE3Expmap();
         VT->setId(mGNSSFramework->mnId);
@@ -2615,7 +2615,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 double rbias_prior = mGNSSFramework->epochData[ep_idx].rClockBiasPrior;
                 VertexClockBias * VRB = new VertexClockBias(rbias_prior);
                 VRB->setId(mGNSSFramework->recClockBiasID(ep_idx));
-                //VRB->setFixed(true);
+                VRB->setFixed(false);
                 optimizer.addVertex(VRB);
                 // Reciever bias prior edge
                 g2o::HyperGraph::Vertex* VRB_ = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
@@ -2632,10 +2632,17 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     vector<EdgeInertial*> vei(N,(EdgeInertial*)NULL);
     vector<EdgeGyroRW*> vegr(N,(EdgeGyroRW*)NULL);
     vector<EdgeAccRW*> vear(N,(EdgeAccRW*)NULL);
+    vector<EdgePsuedorange*> PrL;
 
     for(int i=0;i<N;i++)
     {
         KeyFrame* pKFi = vpOptimizableKFs[i];
+        Eigen::Matrix3d InfoPr = pKFi->mpImuPreintegrated->C.block<3,3>(12,12).cast<double>().inverse();
+        //Eigen::Matrix3d InfoPr = pKF->mpImuPreintegrated->C.block<3,3>(9,9).cast<double>().inverse();
+        double InfoP_= InfoPr.coeff(0,0);
+        //  cerr << "InfoPr: " << InfoPr << endl;
+       // cout << "INFOP_: " << InfoP_ << endl;
+
 
         if(!pKFi->mPrevKF)
         {
@@ -2659,7 +2666,50 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                 cerr << "Error " << VP1 << ", "<< VV1 << ", "<< VG1 << ", "<< VA1 << ", " << VP2 << ", " << VV2 <<  ", "<< VG2 << ", "<< VA2 <<endl;
                 continue;
             }
+                bool printSelected = false;
 
+        if(false){
+       // if(pKFi->fGF && mGNSSFramework->finishedInitOp){
+            //cout << "InfoG"<< endl;
+
+            for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[pKFi->epochIdx].satData.size(); sat_idx ++){
+
+                cout << "fls" << endl;
+
+
+                g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
+                g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(pKFi->epochIdx));
+
+                EdgePsuedorange * prE = new EdgePsuedorange(mGNSSFramework);
+
+                    if(!printSelected){
+                    prE->toPrint = true;
+                    printSelected = true;
+                }
+
+
+                cout << "sv:" << endl;
+
+                prE->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP2));
+                prE->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV2));
+                prE->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG2));
+                prE->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA2));
+                prE->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
+                prE->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
+                prE->setMeasurements(mGNSSFramework, pKFi, pKFi->epochIdx, sat_idx);
+                cout << "2:" << endl;
+
+                Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*100;
+                prE->setInformation(Info);
+                g2o::RobustKernelHuber* tki = new g2o::RobustKernelHuber;
+                prE->setRobustKernel(tki);    
+                tki->setDelta(sqrt(16.92));
+                optimizer.addEdge(prE);
+              //  PrL.push_back(prE);
+                cout << "endl" << endl;
+
+            }
+        }
             vei[i] = new EdgeInertial(pKFi->mpImuPreintegrated);
 
             vei[i]->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
@@ -2668,7 +2718,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             vei[i]->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA1));
             vei[i]->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP2));
             vei[i]->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV2));
-
+            
             if(i==N-1 || bRecInit)
             {
                 // All inertial residuals are included without robust cost function, but not that one linking the
@@ -2701,59 +2751,72 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         else
             cout << "ERROR building inertial edge" << endl;
                     //eTest4
-
+       // cout << "vei[0]->information(): \n" << vei[0]->information() << endl;
         // psuedorange edges
-    //if(false){
-    if(pKFi->fGF && mGNSSFramework->finishedInitOp){
-            cout << "Checkpoint 1:  " << endl; 
+    bool printSelected = false;
+   // if(false){
+//if(false){
+if(pKFi->fGF && mGNSSFramework->finishedInitOp){
             int ep_idx = pKFi->epochIdx;
 
             for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx ++){
                 
                 EdgePsuedorange * ePR = new EdgePsuedorange(mGNSSFramework);
-                
+                if(!printSelected){
+                    ePR->toPrint = true;
+                    printSelected = true;
+                }
                 ePR->setMeasurements(mGNSSFramework, pKFi, ep_idx, sat_idx);
                 
                 int satId = mGNSSFramework->epochData[ep_idx].satData[sat_idx].satId;
                 // Collect vertices
                 g2o::HyperGraph::Vertex* VP = optimizer.vertex(pKFi->mnId);
-                g2o::HyperGraph::Vertex* VV = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
-                g2o::HyperGraph::Vertex* VG = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
-                g2o::HyperGraph::Vertex* VA = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
+             //   g2o::HyperGraph::Vertex* VV = optimizer.vertex(maxKFid+3*(pKFi->mnId)+1);
+              //  g2o::HyperGraph::Vertex* VG = optimizer.vertex(maxKFid+3*(pKFi->mnId)+2);
+               // g2o::HyperGraph::Vertex* VA = optimizer.vertex(maxKFid+3*(pKFi->mnId)+3);
                 g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
                 g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(ep_idx));
                 
                // cout << "Checkpoint vertex skapade:  " << endl; 
-                if( !VP || !VV || !VG || !VA || !VT || !VRB ||!ePR)
-                    {
-                    cerr << "Error nu " << VP << ", "<< VV  << ", "<< VG  << ", "<< VA << ", " << VT << ", " << VRB <<endl;
-                        continue;
-                    }
+             //   if( !VP || !VV || !VG || !VA || !VT || !VRB ||!ePR)
+               //     {
+                 //   cerr << "Error nu " << VP << ", "<< VV  << ", "<< VG  << ", "<< VA << ", " << VT << ", " << VRB <<endl;
+                   //     continue;
+                   // }
                 // Connect vertices to edge
                 ePR->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP));
 
-                ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV));
+//              ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV));
 
-                ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
+  //            ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG));
 
-                ePR->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA));
+    //            ePR->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA));
 
-                ePR->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
+                ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
 
-                ePR->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
+                ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
+               // Eigen::Matrix3d Infods = pKFi->mpImuPreintegrated->C.block<3,3>(9,9).cast<double>().inverse();
 
-                g2o::RobustKernelHuber* rki = new g2o::RobustKernelHuber;
+               // cout << "Infods: \n" << Infods << endl;
+                Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*100;
+              //  cout << "Info: " << Info <<  endl;
+                
 
-                //ePR->setRobustKernel(rki);    
-
-                //rki->setDelta(sqrt(16.92));
-
+                g2o::RobustKernelHuber* tki = new g2o::RobustKernelHuber;
+                
+                ePR->setRobustKernel(tki);    
+                ePR->setInformation(Info);
+                tki->setDelta(1);
                 optimizer.addEdge(ePR);
                 //cout << "Test4 Klart" << endl;
+                PrL.push_back(ePR);
             }
-            
+             
         }
     }
+
+    
+
 
     // Set MapPoint vertices
     const int nExpectedSize = (N+lFixedKeyFrames.size())*lLocalMapPoints.size();
@@ -2910,6 +2973,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
                         const float &invSigma2 = pKFi->mvInvLevelSigma2[kpUn.octave]/unc2;
                         e->setInformation(Eigen::Matrix2d::Identity()*invSigma2);
 
+
                         g2o::RobustKernelHuber* rk = new g2o::RobustKernelHuber;
                         e->setRobustKernel(rk);
                         rk->setDelta(thHuberMono);
@@ -2930,16 +2994,48 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         assert(mit->second>=3);
     }
 
+
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     float err = optimizer.activeRobustChi2();
-    optimizer.optimize(opt_it); // Originally to 2
+    optimizer.optimize(10); // Originally to 2
     float err_end = optimizer.activeRobustChi2();
     if(pbStopFlag)
         optimizer.setForceStopFlag(pbStopFlag);
 
     vector<pair<KeyFrame*,MapPoint*> > vToErase;
     vToErase.reserve(vpEdgesMono.size()+vpEdgesStereo.size());
+
+    int n_remove = 0;
+    if(mGNSSFramework->finishedInitOp){
+        for(int i = 0; i < PrL.size() ; i++ ){
+
+            EdgePsuedorange * epr = PrL[i];
+
+            if(!epr){
+                continue;
+            }
+
+          if(epr->chi2() > 1000) {
+              optimizer.removeEdge(epr);
+            n_remove++;
+           }
+           else{
+                g2o::RobustKernelHuber* tki = new g2o::RobustKernelHuber;
+                epr->setRobustKernel(tki);    
+                tki->setDelta(8);
+               }
+
+        }
+    }
+
+    optimizer.initializeOptimization();
+    optimizer.computeActiveErrors();
+    optimizer.optimize(10); // Originally to 2
+
+
+    cout << "removed " << n_remove << "/" << PrL.size()<< endl;
+
 
     // Check inlier observations
     // Mono
@@ -2951,7 +3047,8 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
         if(pMP->isBad())
             continue;
-
+      //  cout << "MONDO CHI2: " << e->chi2() << endl;
+       // cout << "MONO CHI2 Thresh: " << chi2Mono2 << endl;
         if((e->chi2()>chi2Mono2 && !bClose) || (e->chi2()>1.5f*chi2Mono2 && bClose) || !e->isDepthPositive())
         {
             KeyFrame* pKFi = vpEdgeKFMono[i];
@@ -3004,6 +3101,7 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
         (*lit)->mnBAFixedForKF = 0;
 
     // Recover optimized data
+
     // Local temporal Keyframes
     N=vpOptimizableKFs.size();
     for(int i=0; i<N; i++)
@@ -3054,10 +3152,9 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
 
   
     if(!mGNSSFramework->checkInitialization()){return;} // Check if initialization has to run
-
+    return;
     // Set up optimizer
     g2o::SparseOptimizer optimizer;
-    optimizer.setVerbose(false);
 
     g2o::BlockSolverX::LinearSolverType * linearSolver;
     linearSolver = new g2o::LinearSolverEigen<g2o::BlockSolverX::PoseMatrixType>();
@@ -3074,7 +3171,7 @@ void Optimizer::InitalizeGNSS(KeyFrame *pKF, GNSSFramework * mGNSSFramework){
     v_T_WG_WL->setEstimate(mGNSSFramework->T_WG_WL); 
     v_T_WG_WL->setId(mGNSSFramework->mnId);
     optimizer.addVertex(v_T_WG_WL);
-
+    
     VertexScale * s = new VertexScale();
     s->setId(mGNSSFramework->mnId+1);
     optimizer.addVertex(s);
@@ -3659,7 +3756,7 @@ void Optimizer::InertialOptimization(Map *pMap, Eigen::Matrix3d &Rwg, double &sc
 
 void Optimizer::LocalBundleAdjustment(KeyFrame* pMainKF,vector<KeyFrame*> vpAdjustKF, vector<KeyFrame*> vpFixedKF, bool *pbStopFlag)
 {
-    bool bShowImages = false;
+    bool bShowImages = true;
 
     vector<MapPoint*> vpMPs;
 

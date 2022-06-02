@@ -529,6 +529,8 @@ void EdgeInertial::computeError()
     const Eigen::Vector3d ev = VP1->estimate().Rwb.transpose()*(VV2->estimate() - VV1->estimate() - g*dt) - dV;
     const Eigen::Vector3d ep = VP1->estimate().Rwb.transpose()*(VP2->estimate().twb - VP1->estimate().twb
                                                                - VV1->estimate()*dt - g*dt*dt/2) - dP;
+    
+
 
     _error << er, ev, ep;
 }
@@ -970,14 +972,33 @@ void GNSSFramework::setupInitialization(KeyFrame * cKF){
 void GNSSFramework::setupInitialization(){
 // Set transform from ENU to local to identity
 
-Eigen::Quaterniond * r_ = new Eigen::Quaterniond();
-Eigen::Vector3d * t_ = new Eigen::Vector3d();
+        /*Eigen::Matrix3d R_;
+        R_ << 0.1724, -0.9707, -0.1676,
+        0.7964, 0.0372, 0.6037,
+        -0.5797, -0.2376, 0.7794;
+Eigen::Vector3d t_ {12.0, 1.6, 8.6};    */
+//Eigen::Vector3d t_ {16.9889, 4.5907, 13.5984};
 
-r_->setIdentity();
-t_->setZero();
+Eigen::Matrix3d R_;
+/*
+R_ << -0.00395744013266097 ,-0.999991882096949, 0.000757896958104207,
+0.999992076902572, -0.00395711281800635, 0.000432885928510101,
+-0.000429883330616459, 0.000759604073359117, 0.999999619100914;
 
-T_WG_WL.setRotation(*static_cast<const Eigen::Quaterniond*>(r_));
-T_WG_WL.setTranslation(*static_cast<const Eigen::Vector3d *>(t_));
+*/
+R_ << -0.00395744013266097 ,0.999992076902572, -0.000429883330616459,
+-0.999991882096949 ,-0.00395711281800635 ,0.000759604073359117,
+0.000757896958104207, 0.000432885928510101, 0.999999619100914;
+
+
+
+Eigen::Vector3d t_ { 2.30136537600001 ,-12.144961357, 0.0971858499999992};    
+//Eigen::Vector3d t_ {50.0, 50.0, 50.0};    
+
+Eigen::Quaterniond r_(R_);
+
+T_WG_WL.setRotation(static_cast<const Eigen::Quaterniond>(r_));
+T_WG_WL.setTranslation(static_cast<const Eigen::Vector3d>(t_));
 
 // Set rotation and traslation from ECEF to ENU in GNSS framework
 
@@ -995,7 +1016,7 @@ lambda = geodeticCoordinates[1]*deg2rad;
 
 R11 = -sin(lambda); R12 = cos(lambda); R13 = 0;
 R21 = -sin(phi)*cos(lambda); R22 = -sin(phi)*sin(lambda); R23 = cos(phi);
-R31 = -cos(phi)*cos(lambda); R32 = cos(phi)*sin(lambda); R33 = sin(phi);
+R31 = cos(phi)*cos(lambda); R32 = cos(phi)*sin(lambda); R33 = sin(phi);
 
 R_WG_WE.row(0) << R11, R12, R13;
 R_WG_WE.row(1) << R21, R22, R23;
@@ -1003,6 +1024,8 @@ R_WG_WE.row(2) << R31, R32, R33;
 
 R_WE_WG = R_WG_WE.transpose();
 bInitalized = true;
+
+
 
 }
 
@@ -1012,14 +1035,14 @@ Eigen::Vector3d GeodeticToECEF(Eigen::Vector3d geodeticCoordinates){
 
     deg2rad = 3.141592653589793/180;
     a = 6378137.0000; // m (WGS-84 ellipsoid, semi-major axis)
-    b = 6356752.3142; // m (WGS-84 ellipsoid, semi-minor axis)
+    b = 6356752.3142518; // m (WGS-84 ellipsoid, semi-minor axis)
     e2 = 1 - pow(b, 2) / pow(a, 2) ; 
 
     phi    = geodeticCoordinates[0]*deg2rad;
     lambda = geodeticCoordinates[1]*deg2rad;
     h      = geodeticCoordinates[2];
 
-    N_phi = a/sqrt(1 - e2*(pow(sin(phi), 2))); // Prime vertical radius of curvature N(phi)
+   N_phi = a/ sqrt(1 - e2*(sin(phi)*sin(phi))); // Prime vertical radius of curvature N(phi)
 
     x = (N_phi + h) * cos(phi) * cos(lambda);
     y = (N_phi + h) * cos(phi) * sin(lambda);
