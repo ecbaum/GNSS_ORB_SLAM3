@@ -150,10 +150,10 @@ void LocalMapping::Run()
                         bool bLarge = ((mpTracker->GetMatchesInliers()>75)&&mbMonocular)||((mpTracker->GetMatchesInliers()>100)&&!mbMonocular);
                         Optimizer::LocalInertialBA(mpCurrentKeyFrame, &mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA, mGNSSFramework, bLarge, !mpCurrentKeyFrame->GetMap()->GetIniertialBA2());
                         b_doneLBA = true;
-                        Optimizer::InitalizeGNSS(mpCurrentKeyFrame, mGNSSFramework);
                     }
                     else
                     {
+                        Optimizer::InitalizeGNSS(mpCurrentKeyFrame, mGNSSFramework);
                         Optimizer::LocalBundleAdjustment(mpCurrentKeyFrame,&mbAbortBA, mpCurrentKeyFrame->GetMap(),num_FixedKF_BA,num_OptKF_BA,num_MPs_BA,num_edges_BA);
                         b_doneLBA = true;
                     }
@@ -231,6 +231,7 @@ void LocalMapping::Run()
                         }
 
                         // scale refinement
+                        
                         if (((mpAtlas->KeyFramesInMap())<=200) &&
                                 ((mTinit>25.0f && mTinit<25.5f)||
                                 (mTinit>35.0f && mTinit<35.5f)||
@@ -241,6 +242,7 @@ void LocalMapping::Run()
                             if (mbMonocular)
                                 ScaleRefinement();
                         }
+                        
                     }
                 }
             }

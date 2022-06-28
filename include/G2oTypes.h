@@ -1119,22 +1119,21 @@ Eigen::Vector3d P_WG_WL {0.918325513105219, -14.7973076054876, 0.626832297905288
 
         gI << 0, 0, -IMU::GRAVITY_VALUE;              
         Eigen::Vector3d g = VP1->estimate().Rwb*gI;                                                             // Rotate gravity vector
-        const Eigen::Matrix3d R_WG_WL =VT->estimate().rotation().toRotationMatrix(); 
-        const Eigen::Vector3d P_WG_WL =VT->estimate().translation() ; 
+        const Eigen::Matrix3d R_WG_WL = VT->estimate().rotation().toRotationMatrix(); 
+        const Eigen::Vector3d P_WG_WL = VT->estimate().translation() ; 
                                       
         //const Eigen::Vector3d T_e_k = VV1->estimate()*dT + VP1->estimate().Rwb*(dP + dR*p_b_g) - 0.5*g*dT*dT;   // Integrated IMU position from moment of exposure to moment of epoch
         const Eigen::Vector3d P_WL_Gme = VP1->estimate().twb;// - T_e_k; 
         const double pr =  static_cast<const double>(pr_);  
         
         const double pr_error = ( P_WE_Sie - ( R_WE_WG*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG)).norm() + c* (b_r->estimate()) - pr;
-
         _error = Eigen::Matrix<double,1,1 > (pr_error);
 
        if(toPrint){
           //  cout << "-------------------epT: " << endl << epT << endl; 
-            cout << "ERROR: \n" << _error << endl;
-            // cout << "R_WG_WL: \n" << R_WG_WL << endl;
-            // cout << "P_WG_WL: \n" <<P_WG_WL<< endl;
+           cout << "ERROR: \n" << _error << endl;
+             //cout << "R_WG_WL: \n" << R_WG_WL << endl;
+             //cout << "P_WG_WL: \n" <<P_WG_WL<< endl;
              // cout << "R_WE_WG: \n" << R_WE_WG << endl;
             // cout << "p_WE_WG: \n" << p_WE_WG << endl;
            // cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;
@@ -1149,23 +1148,25 @@ Eigen::Vector3d P_WG_WL {0.918325513105219, -14.7973076054876, 0.626832297905288
                     Eigen::Vector3d gt;
                     gt =  R_WE_WG.transpose() * ( gt_ - p_WE_WG) ; 
 
-                   // cout << "Error to GT: \n  "<< ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm() << endl;
-                pr_error2 =  ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm();
-                
-                break; 
+              //    cout << "Error test: \n"<< ((R_WE_WG*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG) -gt_).norm() << endl;
+                 //  cout << "Error to GT: \n  "<< ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm() << endl;
+               // pr_error2 =  ((R_WG_WL*P_WL_Gme + P_WG_WL - gt)).norm();
+                //            pr_error2 =     ((R_WE_WG*(R_WG_WL*P_WL_Gme + P_WG_WL) + p_WE_WG) -gt_).norm();
 
-                  
-    
+                break; 
 
                 }
             }
-                           cout << "GT ERROR: \n " << pr_error2 << endl;
+           //                cout << "GT ERROR: \n " << pr_error2 << endl;
+//                                   _error = Eigen::Matrix<double,1,1 > (pr_error2);
 
-        }    
+        //_error = Eigen::Matrix<double,1,1 > (pr_error2);
+
+        //}    
           //  _error = Eigen::Matrix<double,1,1 > (pr_error2);
 
 
-        //}
+        }
 
 
        // cout <<"P_WE_Sie:   " << endl << P_WE_Sie << endl;

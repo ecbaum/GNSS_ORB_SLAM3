@@ -197,9 +197,9 @@ System::System(const string &strVocFile, const string &strSettingsFile, const eS
     
     GNSSFramework * mGNSSFramework = new GNSSFramework();
     // Give path to GNSS file to be read. 
-    string pathSPP = "../../Downloads/UrbanLoco/CA-20190828184706/bestpos_CA2.csv";
+    string pathSPP = "../../Downloads/UrbanLoco/CA-20190828184706/gt_port.csv";
     string pathGNSSMessages = "../../Downloads/UrbanLoco/CA-20190828184706/gnss_augmented.txt";
-    string pathGt = "../../Downloads/UrbanLoco/gnss_augmented_with_gt.csv";
+    string pathGt = "../../Downloads/UrbanLoco/CA-20190828184706/gnss_augmented.txt";
     //string pathPosRotTrans = "../data/MH_01_easy/mav0/PosRotTrans.txt";
     vector<vector<double>> GNSSData;
 

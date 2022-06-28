@@ -2386,6 +2386,7 @@ int Optimizer::OptimizeSim3(KeyFrame *pKF1, KeyFrame *pKF2, vector<MapPoint *> &
 
 void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int& num_fixedKF, int& num_OptKF, int& num_MPs, int& num_edges, GNSSFramework * mGNSSFramework, bool bLarge, bool bRecInit)
 {
+        bool printSelected = false;
 
     Map* pCurrentMap = pKF->GetMap();
 
@@ -2598,11 +2599,21 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
     
         //Vertex for ENU to local
         g2o::VertexSE3Expmap * VT = new g2o::VertexSE3Expmap();
+
         VT->setId(mGNSSFramework->mnId);
         VT->setEstimate(mGNSSFramework->T_WG_WL);
         VT->setFixed(true);
         optimizer.addVertex(VT);
+        cout << pKF->mTimeStamp << endl;
+     /*  if(pKF->mTimeStamp > 1.567043256487099648*1e9 ){
+           cout << "Set fix: " << endl;
+            VT->setFixed(true);
 
+        }else{
+                    VT->setFixed(false);
+        }
+
+*/
          // List of satellite seen in keyframes
 
         // setup reciever clock clock bias
@@ -2668,48 +2679,6 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
             }
                 bool printSelected = false;
 
-        if(false){
-       // if(pKFi->fGF && mGNSSFramework->finishedInitOp){
-            //cout << "InfoG"<< endl;
-
-            for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[pKFi->epochIdx].satData.size(); sat_idx ++){
-
-                cout << "fls" << endl;
-
-
-                g2o::HyperGraph::Vertex* VT = optimizer.vertex(mGNSSFramework->mnId);
-                g2o::HyperGraph::Vertex* VRB = optimizer.vertex(mGNSSFramework->recClockBiasID(pKFi->epochIdx));
-
-                EdgePsuedorange * prE = new EdgePsuedorange(mGNSSFramework);
-
-                    if(!printSelected){
-                    prE->toPrint = true;
-                    printSelected = true;
-                }
-
-
-                cout << "sv:" << endl;
-
-                prE->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP2));
-                prE->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VV2));
-                prE->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VG2));
-                prE->setVertex(3,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VA2));
-                prE->setVertex(4,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
-                prE->setVertex(5,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
-                prE->setMeasurements(mGNSSFramework, pKFi, pKFi->epochIdx, sat_idx);
-                cout << "2:" << endl;
-
-                Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*100;
-                prE->setInformation(Info);
-                g2o::RobustKernelHuber* tki = new g2o::RobustKernelHuber;
-                prE->setRobustKernel(tki);    
-                tki->setDelta(sqrt(16.92));
-                optimizer.addEdge(prE);
-              //  PrL.push_back(prE);
-                cout << "endl" << endl;
-
-            }
-        }
             vei[i] = new EdgeInertial(pKFi->mpImuPreintegrated);
 
             vei[i]->setVertex(0,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VP1));
@@ -2748,15 +2717,12 @@ void Optimizer::LocalInertialBA(KeyFrame *pKF, bool *pbStopFlag, Map *pMap, int&
 
             optimizer.addEdge(vear[i]);
         }
-        else
+        else{
             cout << "ERROR building inertial edge" << endl;
-                    //eTest4
-       // cout << "vei[0]->information(): \n" << vei[0]->information() << endl;
-        // psuedorange edges
-    bool printSelected = false;
-   // if(false){
-//if(false){
-if(pKFi->fGF && mGNSSFramework->finishedInitOp){
+            }
+            printSelected = false;
+    //if(false){
+            if(pKFi->fGF && mGNSSFramework->finishedInitOp){
             int ep_idx = pKFi->epochIdx;
 
             for(int sat_idx = 0; sat_idx < mGNSSFramework->epochData[ep_idx].satData.size(); sat_idx ++){
@@ -2795,20 +2761,14 @@ if(pKFi->fGF && mGNSSFramework->finishedInitOp){
                 ePR->setVertex(1,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VT));
 
                 ePR->setVertex(2,dynamic_cast<g2o::OptimizableGraph::Vertex*>(VRB));
-               // Eigen::Matrix3d Infods = pKFi->mpImuPreintegrated->C.block<3,3>(9,9).cast<double>().inverse();
 
-               // cout << "Infods: \n" << Infods << endl;
-                Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*100;
-              //  cout << "Info: " << Info <<  endl;
+                Eigen::Matrix<double, 1, 1> Info = Eigen::Matrix<double, 1, 1>::Identity(1,1)*2000;
                 
-
                 g2o::RobustKernelHuber* tki = new g2o::RobustKernelHuber;
-                
                 ePR->setRobustKernel(tki);    
                 ePR->setInformation(Info);
-                tki->setDelta(1);
+                tki->setDelta(3);
                 optimizer.addEdge(ePR);
-                //cout << "Test4 Klart" << endl;
                 PrL.push_back(ePR);
             }
              
@@ -3016,7 +2976,7 @@ if(pKFi->fGF && mGNSSFramework->finishedInitOp){
                 continue;
             }
 
-          if(epr->chi2() > 1000) {
+          if(epr->chi2() > 5000) {
               optimizer.removeEdge(epr);
             n_remove++;
            }
@@ -3026,14 +2986,12 @@ if(pKFi->fGF && mGNSSFramework->finishedInitOp){
                 tki->setDelta(8);
                }
 
-        }
+        } 
+        
     }
-
     optimizer.initializeOptimization();
     optimizer.computeActiveErrors();
     optimizer.optimize(10); // Originally to 2
-
-
     cout << "removed " << n_remove << "/" << PrL.size()<< endl;
 
 
