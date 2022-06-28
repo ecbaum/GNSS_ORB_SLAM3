@@ -1,0 +1,113 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters. Adjust them!
+#--------------------------------------------------------------------------------------------
+File.version: "1.0"
+
+Camera.type: "PinHole"
+
+# Camera calibration and distortion parameters (OpenCV) 
+#Camera1.fx: 458.654
+#Camera1.fy: 457.296
+#Camera1.cx: 367.215
+#Camera1.cy: 248.375
+
+Camera1.fx: 1857.4752797615988
+Camera1.fy: 1869.2155909761746
+Camera1.cx: 1039.692658811044
+Camera1.cy: 739.3362262994145
+
+Camera1.k1: -3.0451652061637519e-01
+Camera1.k2: 3.8894492749157322e-02
+Camera1.p1: 1.0517466490567872e-03
+Camera1.p2:  -5.5095449411338973e-04
+Camera1.k3: 1.7054732639063463e-01
+
+
+
+# Camera resolution
+Camera.width: 2048
+Camera.height: 1536
+Camera.newWidth: 1024
+Camera.newHeight: 768
+IMU.InsertKFsWhenLost: 1
+Camera.bf: 50
+# Camera frames per second 
+Camera.fps: 10
+# Color order of the images (0: BGR, 1: RGB. It is ignored if images are grayscale)
+Camera.RGB: 0
+System.thFarPoints: 50.0
+# Transformation from camera to body-frame (imu)
+IMU.T_b_c1: !!opencv-matrix
+   rows: 4
+   cols: 4
+   dt: f
+   #data: [-0.0047 ,  -0.9999 ,   0.0129 , -0.0190,
+    #     0.0125  , -0.0130  , -0.9998  , -0.3385,
+     #    0.9999  , -0.0046  ,  0.0125 ,  -0.1809,
+      #   0.0     ,    0.0     ,    0.0 ,   1.0000]
+  # data: [ 9.9934608718980233e-01, -1.5715484428488590e-02,-3.2564114721728155e-02, -1.7434527332030676e-02,
+   #       3.2359037356803094e-02, -1.3131917124154624e-02,9.9939003669937865e-01, 1.7171139776467173e-01,
+    #      -1.6133527815482926e-02, -9.9979026615676858e-01,-1.2614792047622947e-02, -4.5251036141047592e-02, 
+     #      0., 0., 0., 1. ]     
+   
+   data: [ -4.7324731432882849e-03, 1.2489446573634877e-02, 9.9991080473321836e-01, 1.8499563388803192e-01,
+        -9.9990518155032682e-01, -1.2990043852130206e-02, -4.5701935984787667e-03, -2.4227446820327757e-02,
+        1.2931806012923930e-02, -9.9983762305936663e-01, 1.2549737377333781e-02, -3.3589470159409335e-01,
+        0., 0., 0., 1. ]
+  # data: [ -0.0124894465736349 ,     -0.00473247314328828   ,      0.999910804733218   ,      0.108802430567361,
+   #     0.0129900438521302    ,    -0.999905181550327   ,   -0.00457019359847877     ,  -0.0238791980681237,
+    #     0.999837623059367     ,   0.0129318060129239    ,    0.0125497373773338      ,  -0.336850991582246,
+     #                    0.0                  ,       0.0     ,                    0.0             ,            1.0]
+   #data:         [ 0.00473247314328828 ,       -0.999910804733218  ,     -0.0124894465736349  ,       0.184995633888032,
+    #     0.999905181550327    ,   0.00457019359847877     ,   0.0129900438521302   ,    -0.0242274468203278,
+     #  -0.0129318060129239    ,   -0.0125497373773338    ,     0.999837623059367    ,   -0.335894701594093,
+      #                   0.0,                         0.0,                         0.0,                         1.0]
+      
+#IMU.NoiseAcc: 0.08          # accelerometer measurement noise standard deviation. #0.2   0.04
+#IMU.NoiseGyro: 0.004         # gyroscope measurement noise standard deviation.     #0.05  0.004
+#IMU.AccWalk: 0.0004         # accelerometer bias random work noise standard deviation.  #0.02
+#IMU.GyroWalk: 2.0e-4      # gyroscope bias random work noise standard deviation.     #4.0e-5
+#IMU.Frequency: 200.0
+# IMU noise
+IMU.NoiseGyro: 1.7e-4 #1.6968e-04
+IMU.NoiseAcc: 2.0000e-3 #2.0e-3
+IMU.GyroWalk: 1.9393e-05 
+IMU.AccWalk: 3.0000e-03 # 3e-03
+IMU.Frequency: 100.0
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+
+# ORB Extractor: Number of features per image
+ORBextractor.nFeatures: 2000 # 1000
+
+# ORB Extractor: Scale factor between levels in the scale pyramid 	
+ORBextractor.scaleFactor: 1.2
+
+# ORB Extractor: Number of levels in the scale pyramid	
+ORBextractor.nLevels: 8
+
+# ORB Extractor: Fast threshold
+# Image is divided in a grid. At each cell FAST are extracted imposing a minimum response.
+# Firstly we impose iniThFAST. If no corners are detected we impose a lower value minThFAST
+# You can lower these values if your images have low contrast			
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0
+Viewer.ViewpointX: 0.0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -3.5 # -1.8
+Viewer.ViewpointF: 500.0
+
